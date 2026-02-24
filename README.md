@@ -1,11 +1,12 @@
-# Pharma-Inventory-Multi-Warehouse-System
 # 🏥 Pharma Inventory & Multi-Warehouse Batch Tracking System
 
-> A comprehensive web-based pharmaceutical inventory management system with batch tracking, multi-warehouse support, real-time monitoring, and regulatory compliance features.
+> A comprehensive web-based pharmaceutical inventory management system designed for batch tracking, multi-warehouse support, real-time monitoring, and regulatory compliance.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Status: In Development](https://img.shields.io/badge/Status-In%20Development-yellow.svg)]()
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Docker](https://img.shields.io/badge/docker-enabled-blue.svg)](https://www.docker.com/)
+
+
+> **⚠️ Project Status**: This project is currently in the **planning and initial development phase**. The architecture and features described below represent the planned implementation. See the [Current Status](#-current-status) section for details on what's been completed.
 
 ---
 
@@ -24,13 +25,49 @@
 - [Security](#security)
 - [Performance](#performance)
 - [Contributing](#contributing)
-- [License](#license)
+- 
+
+---
+
+## 📊 Current Status
+
+**Development Phase**: Planning & Initial Setup  
+**Version**: 0.1.0-alpha  
+**Last Updated**: February 2024
+
+### ✅ Completed
+- [x] Business Requirements Specification (BRS)
+- [x] Software Requirements Specification (SRS)
+- [x] Functional Requirements Specification (FRS)
+- [x] System architecture design
+- [x] Database schema design
+- [x] API endpoint planning
+- [x] Technology stack selection
+
+### 🚧 In Progress
+- [ ] Development environment setup
+- [ ] Database implementation
+- [ ] Basic authentication module
+- [ ] Core API framework setup
+
+### 📋 Planned (Not Yet Started)
+- Medicine & Batch management modules
+- Warehouse inventory system
+- Real-time alerting system
+- Temperature monitoring
+- Recall workflow
+- Reporting engine
+- WebSocket implementation
+- Frontend development
+
+### 🎯 Current Focus
+Setting up the foundational architecture and implementing the authentication and user management system. The project follows a phased development approach with emphasis on building a solid, scalable foundation.
 
 ---
 
 ## 🎯 Overview
 
-This system addresses critical challenges in pharmaceutical warehouse management including:
+This system is designed to address critical challenges in pharmaceutical warehouse management including:
 
 - **Batch Traceability**: Complete tracking of medicine batches from allocation to dispatch
 - **Multi-Location Management**: Centralized control across multiple warehouse locations
@@ -39,17 +76,17 @@ This system addresses critical challenges in pharmaceutical warehouse management
 - **Temperature Control**: Real-time temperature monitoring and breach detection
 - **Recall Management**: Streamlined batch recall workflow with approval mechanism
 
-### Business Impact
+### Target Business Impact
 
-- ✅ 100% batch traceability for regulatory compliance
-- ✅ Zero negative stock errors through transactional operations
-- ✅ Real-time alerts (< 2 seconds latency)
-- ✅ Comprehensive audit logs for all critical actions
-- ✅ Reduced expiry-related losses through proactive monitoring
+- 100% batch traceability for regulatory compliance
+- Zero negative stock errors through transactional operations
+- Real-time alerting capabilities
+- Comprehensive audit logs for all critical actions
+- Reduced expiry-related losses through proactive monitoring
 
 ---
 
-## ✨ Key Features
+## ✨ Planned Features
 
 ### 🔐 User Management & RBAC
 - JWT-based authentication
@@ -202,150 +239,47 @@ This system addresses critical challenges in pharmaceutical warehouse management
 
 ---
 
-## 🚀 Installation
 
-### Using Docker (Recommended)
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/pharma-inventory-system.git
-cd pharma-inventory-system
-
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your configuration
-nano .env
-
-# Build and start containers
-docker-compose up -d
-
-# Run database migrations
-docker-compose exec api python manage.py migrate
-
-# Create superuser
-docker-compose exec api python manage.py createsuperuser
-
-# Access the application
-# API: http://localhost:8000
-# Frontend: http://localhost:3000
-```
-
-### Manual Installation
-
-```bash
-# Clone repository
-git clone https://github.com/yourusername/pharma-inventory-system.git
-cd pharma-inventory-system
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Setup database
-python manage.py migrate
-
-# Create superuser
-python manage.py createsuperuser
-
-# Start Redis (separate terminal)
-redis-server
-
-# Start Celery worker (separate terminal)
-celery -A pharma_inventory worker -l info
-
-# Start Celery beat (scheduled tasks)
-celery -A pharma_inventory beat -l info
-
-# Run development server
-python manage.py runserver
-```
 
 ---
 
-## ⚙️ Configuration
-
-### Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-# Database
-DB_ENGINE=mysql  # or postgresql
-DB_NAME=pharma_inventory
-DB_USER=pharma_user
-DB_PASSWORD=secure_password
-DB_HOST=localhost
-DB_PORT=3306
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-
-# JWT
-JWT_SECRET_KEY=your-secret-key-here
-JWT_ALGORITHM=HS256
-JWT_EXPIRATION_HOURS=1
-
-# Application
-DEBUG=False
-ALLOWED_HOSTS=localhost,127.0.0.1
-SECRET_KEY=django-secret-key-here
-
-# Celery
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
-
-# Alert Settings
-EXPIRY_WARNING_DAYS=30
-LOW_STOCK_THRESHOLD=10
-
-# Email (optional)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-```
-
----
 
 ## 📖 Usage
 
-### Admin Panel
-Access at `http://localhost:8000/admin`
+> **Note**: The following usage examples represent the planned functionality. Implementation is in progress.
 
-**Admin Capabilities:**
+### Admin Panel (Planned)
+Will be accessible at `http://localhost:8000/admin`
+
+**Planned Admin Capabilities:**
 - User management
 - Medicine catalog management
 - Warehouse configuration
 - Recall approval/rejection
 - System-wide reporting
 
-### Warehouse Manager Dashboard
-Access at `http://localhost:3000/dashboard`
+### Warehouse Manager Dashboard (Planned)
+Will be accessible at `http://localhost:3000/dashboard`
 
-**Manager Capabilities:**
+**Planned Manager Capabilities:**
 - Stock allocation and dispatch
 - Inter-warehouse transfers
 - Temperature logging
 - Recall request submission
 - Warehouse-specific reports
 
-### API Usage
+### API Usage Examples
 
-#### Authentication
+> **Status**: API endpoints are in the design phase. The following examples show the planned structure.
+
+#### Authentication (Planned)
 ```bash
-# Login
+# Login endpoint (planned)
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "user@example.com", "password": "password123"}'
 
-# Response
+# Expected response structure
 {
   "access_token": "eyJhbGciOiJIUzI1NiIs...",
   "token_type": "bearer",
@@ -353,8 +287,9 @@ curl -X POST http://localhost:8000/api/auth/login \
 }
 ```
 
-#### Stock Dispatch
+#### Stock Dispatch (Planned)
 ```bash
+# Dispatch endpoint (planned)
 curl -X POST http://localhost:8000/api/stock/dispatch \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
@@ -367,14 +302,18 @@ curl -X POST http://localhost:8000/api/stock/dispatch \
 
 ---
 
-## 📚 API Documentation
+## 📚 API Documentation (Planned)
 
-### Base URL
+> **Status**: API endpoints are currently in the design phase. Full implementation pending.
+
+### Planned Base URL
 ```
 http://localhost:8000/api
 ```
 
-### Core Endpoints
+### Planned Core Endpoints
+
+> These endpoints represent the designed API structure. Implementation status varies by module.
 
 #### Authentication
 | Method | Endpoint | Description |
@@ -442,9 +381,12 @@ http://localhost:8000/api
 |--------|----------|-------------|
 | GET | `/health` | System health check |
 
-### WebSocket
+### WebSocket (Planned)
+
+> **Status**: WebSocket implementation for real-time updates is planned for Phase 2.
+
 ```javascript
-// Connect to WebSocket
+// Planned WebSocket connection
 const ws = new WebSocket('ws://localhost:8000/ws/alerts');
 
 ws.onmessage = function(event) {
@@ -455,9 +397,11 @@ ws.onmessage = function(event) {
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema (Design)
 
-### Core Entities
+> **Status**: Database schema has been designed and is ready for implementation.
+
+### Planned Core Entities
 
 ```sql
 Users
@@ -590,74 +534,78 @@ Alerts
 
 ---
 
-## ⚡ Performance
+## ⚡ Performance Targets
 
-### Specifications
-- **Concurrent Users**: Supports 500+ simultaneous users
-- **Dashboard Load**: < 3 seconds initial load
-- **WebSocket Latency**: < 2 seconds for real-time alerts
-- **Database Queries**: Optimized with indexes and query caching
-- **API Response**: < 200ms for 95th percentile
+### Design Specifications
+- **Target Concurrent Users**: 500+ simultaneous users
+- **Target Dashboard Load**: < 3 seconds initial load
+- **Target WebSocket Latency**: < 2 seconds for real-time alerts
+- **Database Design**: Optimized with indexes and query caching strategy
+- **Target API Response**: < 200ms for 95th percentile
 
-### Optimization Techniques
-- **Redis Caching**: Frequently accessed data cached (1-hour TTL)
+### Planned Optimization Techniques
+- **Redis Caching**: Frequently accessed data caching (1-hour TTL)
 - **Database Indexing**: Foreign keys, unique constraints, compound indexes
 - **Connection Pooling**: Reusable database connections
 - **Lazy Loading**: Frontend components loaded on demand
 - **Background Jobs**: Heavy processing offloaded to Celery workers
 
-### Scalability
+### Scalability Design
 - **Horizontal Scaling**: Stateless API design for load balancing
-- **Database Replication**: Read replicas for query distribution
-- **Redis Cluster**: Distributed caching and pub/sub
+- **Database Replication**: Read replicas for query distribution (planned)
+- **Redis Cluster**: Distributed caching and pub/sub capability
 - **Docker Orchestration**: Kubernetes-ready architecture
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing (Planned)
+
+> **Status**: Testing infrastructure will be implemented alongside core modules.
 
 ```bash
-# Run unit tests
+# Planned test commands
 pytest tests/unit
 
-# Run integration tests
+# Integration tests (once modules are integrated)
 pytest tests/integration
 
-# Run with coverage
+# Coverage reporting
 pytest --cov=pharma_inventory --cov-report=html
 
-# Run specific test module
+# Specific test module
 pytest tests/test_inventory.py -v
 ```
 
-### Test Coverage Goals
+### Planned Test Coverage Goals
 - Unit Tests: > 80%
 - Integration Tests: > 60%
 - Critical Paths: 100%
 
 ---
 
-## 📊 Monitoring & Logging
+## 📊 Monitoring & Logging (Planned)
 
-### Application Logs
+> **Status**: Monitoring and logging infrastructure planned for Phase 2 implementation.
+
+### Planned Application Logs
 ```python
-# Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-# Location: /var/log/pharma_inventory/
+# Planned log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+# Planned location: /var/log/pharma_inventory/
 ```
 
-### Metrics
+### Planned Metrics
 - Request rate and latency
 - Error rates by endpoint
 - Database query performance
 - Background job success rate
 - WebSocket connection count
 
-### Health Checks
+### Planned Health Checks
 ```bash
-# Check system health
+# Planned health endpoint
 curl http://localhost:8000/health
 
-# Response
+# Expected response structure
 {
   "status": "healthy",
   "database": "connected",
@@ -671,49 +619,96 @@ curl http://localhost:8000/health
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow these guidelines:
+We welcome contributions at this early stage! Whether you're interested in:
+- 🐛 Reporting bugs or issues
+- 💡 Suggesting new features
+- 📝 Improving documentation
+- 💻 Writing code
+- 🧪 Adding tests
+- 🎨 Designing UI/UX
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit changes**: `git commit -m 'Add amazing feature'`
-4. **Push to branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
+Your input is valuable!
 
-### Development Setup
+
+### Development Setup for Contributors
 ```bash
-# Install development dependencies
+# Install development dependencies (once available)
 pip install -r requirements-dev.txt
 
-# Run pre-commit hooks
+# Install pre-commit hooks (once configured)
 pre-commit install
 
-# Format code
+# Run code formatting
 black .
 
-# Lint code
+# Run linting
 flake8 .
 
-# Type checking
+# Run type checking
 mypy .
 ```
 
-### Code Standards
-- Follow PEP 8 style guide
-- Write unit tests for new features
-- Update documentation
-- Use meaningful commit messages
+### Code Standards (Planned)
+- Follow PEP 8 style guide for Python code
+- Write descriptive commit messages
+- Add unit tests for new features (once testing infrastructure is ready)
+- Update documentation for any API changes
+- Comment complex logic
+- Use type hints where applicable
+
+### Areas Where We Need Help
+
+**High Priority:**
+- [ ] Setting up CI/CD pipeline
+- [ ] Creating database migration scripts
+- [ ] Implementing authentication system
+- [ ] Writing unit tests
+- [ ] Frontend development (HTML/CSS/JS)
+
+**Documentation:**
+- [ ] Improving installation instructions
+- [ ] Creating user guides
+- [ ] API documentation examples
+- [ ] Architecture diagrams
+
+**Design:**
+- [ ] UI/UX mockups for dashboard
+- [ ] Logo and branding
+- [ ] Responsive design patterns
+
+### Communication
+
+- **GitHub Issues**: For bug reports and feature requests
+- **Pull Requests**: For code contributions
+- **Discussions**: For general questions and ideas
+- **Email**: [To be added] for private inquiries
+
+### First-Time Contributors
+
+Never contributed to open source before? No problem! We're happy to help you get started. Look for issues tagged with `good first issue` - these are simpler tasks perfect for learning our codebase.
 
 ---
 
-## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 👥 Authors
+## 👥 Team
 
-- **Your Name** - *Initial work* - [GitHub Profile](https://github.com/yourusername)
+**Project Lead**: [Suraj Bhavake  
+**Status**: Two developer, open to collaborators  
+**Contact**: [GitHub Profile](https://github.com/surajbhavake)
+
+### Looking for Team Members
+This project is actively seeking contributors in:
+- Backend development (Python/FastAPI)
+- Frontend development (JavaScript/HTML/CSS)
+- Database design and optimization
+- DevOps and deployment
+- Technical documentation
+- UI/UX design
+
+Interested in joining? Open an issue or reach out!
 
 ---
 
@@ -726,35 +721,36 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📞 Support
+## 📞 Support & Contact
 
-For issues, questions, or suggestions:
+This project is in early development. Support channels are being established.
 
-- **GitHub Issues**: [Project Issues](https://github.com/yourusername/pharma-inventory-system/issues)
-- **Email**: support@example.com
-- **Documentation**: [Full Docs](https://docs.example.com)
+**Current Options:**
+- **GitHub Issues**: [Report bugs or request features](https://github.com/surajbhavakepharma-inventory-system/issues)
+- **GitHub Discussions**: [Ask questions or share ideas](https://github.com/surajbhavake/pharma-inventory-system/discussions)
+- **Email**: [surajbhavake2@gmail.com] (for private inquiries)
 
----
+**Planned:**
+- Dedicated documentation site
+- Community Discord/Slack channel
+- FAQ section
+- Video tutorials
 
-## 🗺️ Roadmap
+### Response Time
+As this is an early-stage project with limited resources:
+- **Issues**: Typically reviewed within 48-72 hours
+- **Pull Requests**: Reviewed within 1 week
+- **Email**: Within 3-5 business days
 
-### Upcoming Features
-- [ ] Mobile app (iOS/Android)
-- [ ] AI-powered demand forecasting
-- [ ] Integration with government regulatory systems
-- [ ] Blockchain-based supply chain tracking
-- [ ] Advanced analytics dashboard
-- [ ] Multi-language support
-- [ ] Barcode/QR code scanning
-
----
-
-## 📈 Project Status
-
-**Current Version**: 1.0.0  
-**Status**: Active Development  
-**Last Updated**: February 2024
+Your patience and understanding are appreciated!
 
 ---
 
-**⭐ If you find this project useful, please consider giving it a star!**
+
+While the project is in early development, the planning, architecture, and approach demonstrate production-ready thinking and capabilities.
+
+---
+
+**⭐ If you find this project interesting, please consider starring it! Stars help others discover the project and motivate continued development.**
+
+**🤝 Interested in collaborating? Open an issue or reach out directly. Let's build something great together!**
