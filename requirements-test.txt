@@ -1,0 +1,22 @@
+# Testing Dependencies for Pharma Inventory System
+
+# Core testing framework
+pytest==8.0.2
+pytest-django==4.8.0
+pytest-cov==4.1.0
+
+# Factory Boy for test fixtures
+factory-boy==3.3.0
+faker==23.2.1
+
+# Additional testing utilities
+pytest-xdist==3.5.0  # Run tests in parallel
+pytest-mock==3.12.0  # Mocking utilities
+freezegun==1.4.0  # Time mocking for token expiration tests
+
+# Code quality
+pytest-flake8==1.1.1
+pytest-pylint==0.21.0
+
+# Coverage reporting
+coverage[toml]==7.4.1
