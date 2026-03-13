@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+from .permissions import IsAdmin
 
 from .models import User
 from .serializers import (
@@ -262,7 +263,7 @@ class UserListView(generics.ListAPIView):
     
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdmin]
     
     @extend_schema(
         summary="List all users",
@@ -285,7 +286,7 @@ class UserDetailView(generics.RetrieveAPIView):
     
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdmin]
     lookup_field = 'id'
     
     @extend_schema(
