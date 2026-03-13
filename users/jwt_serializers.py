@@ -24,19 +24,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     
     @classmethod
     def get_token(cls, user):
-        """
-        Override to add custom claims to token payload.
-        """
         token = super().get_token(user)
-        
-        # Add custom claims
+
+        # Basic user info
         token['email'] = user.email
         token['username'] = user.username
-        token['role'] = user.role  # CRITICAL: Role-based access control
+        token['role'] = user.role
         token['full_name'] = user.get_full_name()
         token['is_active'] = user.is_active
-        
-        # Add warehouse information if assigned
+
+        # Warehouse info
         if user.assigned_warehouse:
             token['warehouse_id'] = str(user.assigned_warehouse.id)
             token['warehouse_code'] = user.assigned_warehouse.code
@@ -45,14 +42,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             token['warehouse_id'] = None
             token['warehouse_code'] = None
             token['warehouse_name'] = None
-        
-        # Add permission flags for easy frontend checks
-        token['can_approve_recalls'] = user.can_approve_recalls()
-        token['can_manage_stock'] = user.can_manage_stock()
-        token['is_admin'] = user.is_admin()
-        token['is_manager'] = user.is_manager()
-        token['is_auditor'] = user.is_auditor()
-        
+
+        # Role-based permission flags
+        token['can_approve_recalls'] = user.role == "admin"
+
+        token['can_manage_stock'] = user.role in [
+            "admin",
+            "warehouse_manager"
+        ]
+
+        token['is_admin'] = user.role == "admin"
+        token['is_manager'] = user.role == "warehouse_manager"
+        token['is_auditor'] = user.role == "auditor"
+
         return token
     
     def validate(self, attrs):
