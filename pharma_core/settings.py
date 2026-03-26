@@ -107,6 +107,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     'corsheaders',
+    'django_filters',
     
     # Local apps
     'users.apps.UsersConfig',

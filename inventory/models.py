@@ -199,7 +199,7 @@ class Batch(models.Model):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(total_quantity__gte=0),
+                condition=models.Q(total_quantity__gte=0),
                 name='batch_total_quantity_non_negative'
             ),
         ]
@@ -388,7 +388,7 @@ class WarehouseStock(models.Model):
         constraints = [
             # CRITICAL: Ensure stock quantity is never negative
             models.CheckConstraint(
-                check=models.Q(quantity__gte=0),
+                condition=models.Q(quantity__gte=0),
                 name='warehouse_stock_quantity_non_negative'
             ),
         ]
