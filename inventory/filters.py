@@ -7,9 +7,38 @@ Provides advanced filtering capabilities using django-filter.
 import django_filters
 from django.utils import timezone
 from datetime import timedelta
+from .models import StockMovement
+
+
 
 from .models import Medicine, Batch
 from .models import Medicine, Batch, Warehouse, WarehouseStock
+
+import django_filters
+
+from .models import AuditLog
+
+
+class AuditLogFilter(django_filters.FilterSet):
+
+    action = django_filters.CharFilter(
+        lookup_expr="iexact"
+    )
+
+    entity_type = django_filters.CharFilter(
+        lookup_expr="icontains"
+    )
+
+    created_at = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+
+        model = AuditLog
+
+        fields = [
+            "action",
+            "entity_type",
+        ]
 
 
 class MedicineFilter(django_filters.FilterSet):
@@ -251,3 +280,31 @@ class WarehouseFilter(django_filters.FilterSet):
     class Meta:
         model = Warehouse
         fields = ['city', 'state', 'is_active', 'manager']
+
+
+class StockMovementFilter(django_filters.FilterSet):
+
+    batch_id = django_filters.UUIDFilter(field_name="batch__id")
+    warehouse_id = django_filters.UUIDFilter(field_name="warehouse__id")
+    movement_type = django_filters.CharFilter(field_name="movement_type")
+
+    # date filters
+    start_date = django_filters.DateTimeFilter(
+        field_name="performed_at", lookup_expr="gte"
+    )
+    end_date = django_filters.DateTimeFilter(
+        field_name="performed_at", lookup_expr="lte"
+    )
+
+    user_id = django_filters.UUIDFilter(field_name="performed_by__id")
+
+    class Meta:
+        model = StockMovement
+        fields = [
+            "batch_id",
+            "warehouse_id",
+            "movement_type",
+            "start_date",
+            "end_date",
+            "user_id",
+        ]

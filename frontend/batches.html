@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Batch
+    </title>
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <!-- Styles -->
+    <link
+        rel="stylesheet"
+        href="./css/styles.css"
+    >
+
+</head>
+
+<body class="bg-light">
+
+<!-- ===================================================== -->
+<!-- SIDEBAR -->
+<!-- ===================================================== -->
+
+<div id="sidebar-container"></div>
+
+
+<!-- ===================================================== -->
+<!-- MAIN CONTENT -->
+<!-- ===================================================== -->
+
+<div class="main-content p-4">
+
+    <!-- HEADER -->
+
+    <div
+        class="d-flex justify-content-between align-items-center mb-4"
+    >
+
+        <div>
+
+            <h1 class="fw-bold">
+                Batch
+            </h1>
+
+            <p class="text-muted mb-0">
+                Manage medicine batches
+            </p>
+
+        </div>
+
+        <button
+            class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#batchModal"
+            onclick="resetForm()"
+        >
+
+            <i class="bi bi-plus-circle"></i>
+
+            Add Batch
+
+        </button>
+
+    </div>
+
+
+    <!-- SEARCH + FILTER -->
+
+    <div class="card border-0 shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+
+                    <input
+                        type="text"
+                        id="searchInput"
+                        class="form-control"
+                        placeholder="Search batch number..."
+                    >
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <select
+                        id="recallFilter"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Batches
+                        </option>
+
+                        <option value="true">
+                            Recalled
+                        </option>
+
+                        <option value="false">
+                            Active
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <button
+                        class="btn btn-dark w-100"
+                        onclick="loadBatches()"
+                    >
+                        Refresh
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TABLE -->
+
+    <div class="card border-0 shadow-sm">
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>Batch</th>
+
+                            <th>Medicine</th>
+
+                            <th>Manufacture</th>
+
+                            <th>Expiry</th>
+
+                            <th>Quantity</th>
+
+                            <th>Status</th>
+
+                            <th width="220">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="batchTableBody">
+
+                        <tr>
+
+                            <td colspan="7" class="text-center">
+
+                                Loading batches...
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- MODAL -->
+<!-- ===================================================== -->
+
+<div
+    class="modal fade"
+    id="batchModal"
+    tabindex="-1"
+>
+
+    <div class="modal-dialog modal-lg">
+
+        <div class="modal-content border-0">
+
+            <div class="modal-header bg-primary text-white">
+
+                <h5 class="modal-title">
+
+                    Batch Form
+
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"
+                ></button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <form id="batchForm">
+
+                    <input
+                        type="hidden"
+                        id="batchId"
+                    >
+
+                    <!-- MEDICINE -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+
+                            Medicine
+
+                        </label>
+
+                        <select
+                            id="medicine"
+                            class="form-select"
+                            required
+                        >
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- BATCH NUMBER -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+
+                            Batch Number
+
+                        </label>
+
+                        <input
+                            type="text"
+                            id="batch_number"
+                            class="form-control"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- DATES -->
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+
+                                Manufacture Date
+
+                            </label>
+
+                            <input
+                                type="date"
+                                id="manufacture_date"
+                                class="form-control"
+                                required
+                            >
+
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+
+                                Expiry Date
+
+                            </label>
+
+                            <input
+                                type="date"
+                                id="expiry_date"
+                                class="form-control"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- QUANTITY -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+
+                            Total Quantity
+
+                        </label>
+
+                        <input
+                            type="number"
+                            id="total_quantity"
+                            class="form-control"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- SUBMIT -->
+
+                    <button
+                        type="submit"
+                        class="btn btn-success w-100"
+                    >
+
+                        Save Batch
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Sidebar -->
+<script type="module" src="./js/sidebar.js"></script>
+
+<!-- Batch JS -->
+<script src="./js/batches.js"></script>
+
+</body>
+</html>

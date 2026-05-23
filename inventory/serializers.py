@@ -11,6 +11,46 @@ from datetime import date
 from .models import Medicine, Batch, Warehouse, WarehouseStock, StockMovement
 
 
+from .models import AuditLog
+
+
+from rest_framework import serializers
+from .models import AuditLog
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+
+    user_name = serializers.SerializerMethodField()
+
+    class Meta:
+
+        model = AuditLog
+
+        fields = [
+            "id",
+            "action",
+            "entity_type",
+            "entity_id",
+            "description",
+            "created_at",
+            "user",
+            "user_name",
+        ]
+
+    def get_user_name(self, obj):
+
+        if obj.user:
+
+            # full_name if exists
+            if hasattr(obj.user, "full_name"):
+
+                return obj.user.full_name
+
+            # fallback username/email
+            return obj.user.email
+
+        return "-"
+
 # ============================================================================
 # Medicine Serializers
 # ============================================================================
@@ -479,3 +519,51 @@ class WarehouseStockSerializer(serializers.ModelSerializer):
             'last_movement_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'last_movement_at']
+
+
+class StockAllocationSerializer(serializers.Serializer):
+    batch_id = serializers.UUIDField()
+    warehouse_id = serializers.UUIDField()
+    quantity = serializers.IntegerField(min_value=1)
+
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be greater than 0")
+        return value
+    
+
+class StockTransferSerializer(serializers.Serializer):
+    batch_id = serializers.UUIDField()
+    source_warehouse_id = serializers.UUIDField()
+    destination_warehouse_id = serializers.UUIDField()
+    quantity = serializers.IntegerField(min_value=1)
+
+    def validate(self, data):
+        if data["source_warehouse_id"] == data["destination_warehouse_id"]:
+            raise serializers.ValidationError("Source and destination cannot be same")
+        return data
+    
+
+class StockMovementSerializer(serializers.ModelSerializer):
+
+    batch_number = serializers.CharField(source="batch.batch_number", read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    user_email = serializers.CharField(source="performed_by.email", read_only=True)
+
+    class Meta:
+        model = StockMovement
+        fields = [
+            "id",
+            "batch",
+            "batch_number",
+            "warehouse",
+            "warehouse_name",
+            "movement_type",
+            "quantity",
+            "reference_id",
+            "related_warehouse",
+            "performed_by",
+            "user_email",
+            "performed_at",
+            "notes",
+        ]

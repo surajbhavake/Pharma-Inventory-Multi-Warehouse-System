@@ -1,13 +1,90 @@
+from urllib import request
+
 from django.shortcuts import render
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Sum, F
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+import uuid
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from .models import StockMovement
+from .serializers import StockMovementSerializer
+from .filters import StockMovementFilter
 
 from .models import WarehouseStock
-from .serializers import WarehouseStockSerializer
+from .serializers import StockTransferSerializer, WarehouseStockSerializer
 from users.permissions import CanManageStock, AuditorReadOnly
 
+from django.db import transaction
+from django.db.models import Sum
+from django.utils import timezone
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+
+from .models import Batch, Warehouse, WarehouseStock, StockMovement
+from .serializers import StockAllocationSerializer
+from users.permissions import CanManageStock
+
+from django.db import transaction
+from rest_framework.response import Response
+from rest_framework import status
+from uuid import uuid4
+
+from django.db import transaction
+from django.db.models import F
+from uuid import uuid4
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
+
+from rest_framework.exceptions import APIException
+
+from .models import WarehouseStock, StockMovement, Batch, Warehouse
+from users.permissions import CanManageStock
+from rest_framework.exceptions import ValidationError
+from rest_framework import viewsets
+from .models import AuditLog
+from .serializers import AuditLogSerializer
+from .filters import AuditLogFilter
+
+
+class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+
+    queryset = AuditLog.objects.select_related(
+        "user"
+    ).all()
+
+    serializer_class = AuditLogSerializer
+
+    permission_classes = [AuditorReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    filterset_class = AuditLogFilter
+
+    search_fields = [
+        "description",
+        "user__email",
+        "entity_type",
+    ]
+
+    ordering_fields = [
+        "created_at",
+        "action",
+    ]
+
+    ordering = ["-created_at"]
 
 class WarehouseStockListView(APIView):
     """
@@ -28,21 +105,98 @@ class WarehouseStockListView(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    summary="Transfer stock between warehouses",
+    description="Safely transfer stock using transaction and row locking",
+    request=StockTransferSerializer,
+    responses={200: None},
+    tags=["Inventory - Stock Operations"],
+)
 class StockTransferView(APIView):
-    """
-    Transfer stock between warehouses.
-    Only admin and warehouse_manager allowed.
-    """
-
     permission_classes = [CanManageStock]
+    serializer_class = StockTransferSerializer  # ✅ Swagger fix
 
     def post(self, request):
+        try:
+            with transaction.atomic():
 
-        # real transfer logic will go into services.py later
-        return Response(
-            {"message": "Stock transfer executed"},
-            status=status.HTTP_200_OK,
-        )
+                serializer = self.serializer_class(data=request.data)
+                serializer.is_valid(raise_exception=True)
+
+                batch_id = serializer.validated_data["batch_id"]
+                source_id = serializer.validated_data["source_warehouse_id"]
+                dest_id = serializer.validated_data["destination_warehouse_id"]
+                quantity = serializer.validated_data["quantity"]
+
+                # 🔒 Lock rows
+                source_stock = WarehouseStock.objects.select_for_update().get(
+                    batch_id=batch_id,
+                    warehouse_id=source_id
+                )
+
+                dest_stock, _ = WarehouseStock.objects.select_for_update().get_or_create(
+                    batch_id=batch_id,
+                    warehouse_id=dest_id,
+                    defaults={"quantity": 0}
+                )
+
+                # ❌ Validation
+                if source_stock.quantity < quantity:
+                    return Response(
+                        {"error": "Insufficient stock"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                reference_id = uuid.uuid4()
+
+                # ➖ Deduct
+                source_stock.quantity -= quantity
+                source_stock.save()
+
+                # ➕ Add
+                dest_stock.quantity += quantity
+                dest_stock.save()
+
+                # 🧾 Movement logs
+                StockMovement.objects.create(
+                    batch_id=batch_id,
+                    warehouse_id=source_id,
+                    movement_type="TRANSFER_OUT",
+                    quantity=-quantity,
+                    reference_id=reference_id,
+                    performed_by=request.user,
+                )
+
+                StockMovement.objects.create(
+                    batch_id=batch_id,
+                    warehouse_id=dest_id,
+                    movement_type="TRANSFER_IN",
+                    quantity=quantity,
+                    reference_id=reference_id,
+                    performed_by=request.user,
+                )
+                AuditLog.objects.create(
+    user=request.user,
+    action="TRANSFER",
+    entity_type="WarehouseStock",
+    entity_id=str(batch_id),
+    description=f"Transferred {quantity} stock",
+    metadata={
+        "source_warehouse": str(source_id),
+        "destination_warehouse": str(dest_id),
+    }
+)
+
+            return Response(
+                {"message": "Stock transferred successfully"},
+                status=status.HTTP_200_OK
+            )
+
+        except ValidationError:
+            raise  # keep serializer errors
+
+        except Exception:
+            raise ValidationError("Transfer failed")  # test-safe + API-safe
 # Create your views here.
 """
 inventory/views.py - DRF ViewSets for Inventory Management
@@ -245,6 +399,29 @@ class MedicineViewSet(viewsets.ModelViewSet):
         description="Get statistics for a specific medicine (total stock, batches, etc.).",
         tags=['Inventory - Medicines']
     )
+
+
+    def perform_create(self, serializer):
+        medicine = serializer.save()
+        AuditLog.objects.create(
+            user=self.request.user,
+            
+            action="CREATE",
+            entity_type="Medicine",
+            entity_id=str(medicine.id),
+            description=f"Created medicine {medicine.name}",
+        )
+
+    def perform_update(self, serializer):
+        medicine = serializer.save()
+        AuditLog.objects.create(
+            user=self.request.user,
+                      
+            action="UPDATE",
+            entity_type="Medicine",
+            entity_id=str(medicine.id),
+            description=f"Updated medicine {medicine.name}",
+        )
     @action(detail=True, methods=['get'])
     def statistics(self, request, pk=None):
         """Custom action: Get medicine statistics"""
@@ -266,6 +443,8 @@ class MedicineViewSet(viewsets.ModelViewSet):
                 expiry_date__lt=timezone.now().date()
             ).count(),
         }
+
+
         
         return Response(stats)
 
@@ -536,6 +715,215 @@ class WarehouseViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'created_at', 'city']
     ordering = ['name']
 
+
+@extend_schema(
+    summary="Allocate stock to warehouse",
+    description="Allocate batch quantity to a warehouse with transaction safety and validation",
+    request=StockAllocationSerializer,
+    responses={200: None},
+    tags=["Inventory - Stock"]
+)
+class StockAllocationView(APIView):
+    """
+    Allocate batch quantity to a warehouse safely.
+
+    Business Rules:
+    - Cannot allocate more than batch total_quantity
+    - Cannot allocate recalled batch
+    - Must be transaction-safe (no race condition)
+    """
+
+    permission_classes = [CanManageStock]
+
+    def post(self, request):
+        serializer = StockAllocationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        batch_id = serializer.validated_data["batch_id"]
+        warehouse_id = serializer.validated_data["warehouse_id"]
+        quantity = serializer.validated_data["quantity"]
+
+        try:
+            with transaction.atomic():
+
+                # 🔒 STEP 1: Lock batch row
+                batch = Batch.objects.select_for_update().get(id=batch_id)
+
+                # ❌ Rule: Cannot allocate recalled batch
+                if batch.is_recalled:
+                    return Response(
+                        {"error": "Cannot allocate recalled batch"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # 📊 STEP 2: Calculate total allocated
+                total_allocated = (
+                    WarehouseStock.objects
+                    .filter(batch=batch)
+                    .aggregate(total=Sum("quantity"))["total"] or 0
+                )
+
+                # 💣 CORE RULE: Prevent over-allocation
+                if total_allocated + quantity > batch.total_quantity:
+                    return Response(
+                        {
+                            "error": "Allocation exceeds batch total quantity",
+                            "available_quantity": batch.total_quantity - total_allocated
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # 🔒 STEP 3: Lock or create warehouse stock
+                stock, created = WarehouseStock.objects.select_for_update().get_or_create(
+                    warehouse_id=warehouse_id,
+                    batch=batch,
+                    defaults={"quantity": 0},
+                )
+
+                # ➕ STEP 4: Update stock
+                stock.quantity += quantity
+                stock.last_movement_at = timezone.now()
+                stock.save()
+
+                # 🧾 STEP 5: Create movement log
+                StockMovement.objects.create(
+                    batch=batch,
+                    warehouse_id=warehouse_id,
+                    movement_type="ALLOCATION",
+                    quantity=quantity,
+                    performed_by=request.user,
+                    notes="Stock allocated to warehouse"
+                )
+                AuditLog.objects.create(
+    user=request.user,
+    action="ALLOCATION",
+    entity_type="WarehouseStock",
+    entity_id=str(batch.id),
+    description=f"Allocated {quantity} units",
+)
+
+            # ✅ SUCCESS RESPONSE
+            return Response(
+                {
+                    "message": "Stock allocated successfully",
+                    "batch_id": str(batch.id),
+                    "warehouse_id": str(warehouse_id),
+                    "allocated_quantity": quantity,
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Batch.DoesNotExist:
+            return Response(
+                {"error": "Batch not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+@extend_schema(
+    summary="Transfer stock between warehouses",
+    description="Safely transfer stock using transaction and row locking",
+    request=StockTransferSerializer,
+    responses={200: None},
+    tags=["Inventory - Stock Operations"],
+)
+
+
+class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
+
+    queryset = StockMovement.objects.select_related(
+        "batch", "warehouse", "performed_by"
+    ).all()
+
+    serializer_class = StockMovementSerializer
+    permission_classes = [AuditorReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    filterset_class = StockMovementFilter
+
+    search_fields = [
+        "batch__batch_number",
+        "warehouse__name",
+        "notes",
+    ]
+
+    ordering_fields = ["performed_at", "quantity"]
+    ordering = ["-performed_at"]
+
+class WarehouseStockViewSet(viewsets.ReadOnlyModelViewSet):
+
+    queryset = WarehouseStock.objects.select_related(
+        "warehouse",
+        "batch",
+        "batch__medicine",
+    ).all()
+
+    serializer_class = WarehouseStockSerializer
+
+    permission_classes = [AuditorReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    search_fields = [
+        "warehouse__name",
+        "batch__batch_number",
+        "batch__medicine__name",
+    ]
+
+    ordering_fields = ["quantity"]
+
+    ordering = ["-quantity"]
+
+class LowStockAlertView(APIView):
+
+    def get(self, request):
+
+        low_stock = (
+            Medicine.objects
+            .annotate(
+                total_quantity=Sum("batches__warehouse_stocks__quantity")
+            )
+            .filter(
+                total_quantity__lt=F("min_stock_threshold")
+            )
+            .values(
+                "id",
+                "name",
+                "min_stock_threshold",
+                "total_quantity"
+            )
+        )
+
+        return Response(low_stock)
+
+low_stock = (
+    WarehouseStock.objects
+    .values(
+        medicine_id=F("batch__medicine__id"),
+        medicine_name=F("batch__medicine__name"),
+        threshold=F("batch__medicine__min_stock_threshold"),
+    )
+    .annotate(
+        total_quantity=Sum("quantity")
+    )
+    .filter(
+        total_quantity__lt=F("threshold")
+    )
+)
 
 # Import timezone at top if not already imported
 from django.utils import timezone
