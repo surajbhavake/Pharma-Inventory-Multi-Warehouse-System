@@ -21,6 +21,11 @@ urlpatterns = [
     
     # API v1 Endpoints
     path('api/v1/', include('users.urls', namespace='users')),
+    path('api/v1/', include('inventory.urls', namespace='inventory')),
     # path('api/v1/', include('inventory.urls', namespace='inventory')),  # Coming soon
     # path('api/v1/', include('recalls.urls', namespace='recalls')),  # Coming soon
+    
 ]
+admin.site.site_header = "Pharma Inventory Admin"
+admin.site.site_title = "Pharma Inventory"
+admin.site.index_title = "System Administration"

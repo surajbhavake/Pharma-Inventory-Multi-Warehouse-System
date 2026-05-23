@@ -8,9 +8,9 @@ from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiResponse,OpenApiExample
 from .permissions import IsAdmin
 
 from .models import User
@@ -115,6 +115,55 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+    
+    # ============================================================================
+# Token Refresh View (Override to add docs)
+# ============================================================================
+ 
+@extend_schema(
+    summary="Refresh access token",
+    description="""
+    Use refresh token to obtain a new access token.
+    
+    When the access token expires (after 1 hour), use this endpoint
+    to get a new one without requiring re-login.
+    
+    **Note:** Token rotation is enabled. Each refresh returns a new
+    refresh token and the old one is blacklisted.
+    """,
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'refresh': {
+                    'type': 'string',
+                    'description': 'Refresh token from login response'
+                }
+            },
+            'required': ['refresh']
+        }
+    },
+    responses={
+        200: OpenApiResponse(
+            description="Token refreshed successfully",
+            examples=[
+                OpenApiExample(
+                    'Success',
+                    value={
+                        'access': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...',
+                        'refresh': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'
+                    }
+                )
+            ]
+        ),
+        401: OpenApiResponse(description="Invalid or expired refresh token"),
+    },
+    tags=['Authentication']
+)
+class CustomTokenRefreshView(TokenRefreshView):
+    """Custom token refresh view with documentation"""
+    pass
+ 
 
 
 class LogoutView(APIView):
