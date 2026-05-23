@@ -9,6 +9,74 @@ from django.conf import settings
 import uuid
 
 
+import uuid
+
+from django.db import models
+from django.conf import settings
+
+
+class AuditLog(models.Model):
+
+    ACTION_CHOICES = [
+
+        ("CREATE", "Create"),
+        ("UPDATE", "Update"),
+        ("DELETE", "Delete"),
+        ("TRANSFER", "Transfer"),
+        ("ALLOCATION", "Allocation"),
+        ("RECALL", "Recall"),
+        ("LOGIN", "Login"),
+        ("LOGOUT", "Logout"),
+    ]
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="audit_logs"
+    )
+
+    action = models.CharField(
+        max_length=50,
+        choices=ACTION_CHOICES
+    )
+
+    entity_type = models.CharField(
+        max_length=100
+    )
+
+    entity_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True
+    )
+
+    description = models.TextField()
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+ 
+    metadata = models.JSONField(
+        default=dict,
+        blank=True
+    )
+
+    class Meta:
+
+        ordering = ["-created_at"]
+
+    def __str__(self):
+
+        return f"{self.action} - {self.entity_type}"
+
 class Medicine(models.Model):
     """
     Medicine master catalog.
@@ -507,10 +575,11 @@ class StockMovement(models.Model):
         return f"{self.movement_type}: {sign}{self.quantity} units - {self.batch.batch_number} @ {self.warehouse.code}"
     
     def save(self, *args, **kwargs):
-        """Override save to prevent updates (append-only)"""
-        if self.pk:
-            raise ValueError("Stock movements cannot be modified (append-only ledger)")
-        super().save(*args, **kwargs)
+        # Allow creation (new record)
+        if self._state.adding:
+            super().save(*args, **kwargs)
+        else:
+            raise Exception("Stock movements cannot be modified (append-only ledger)")
     
     def delete(self, *args, **kwargs):
         """Override delete to prevent deletion (append-only)"""

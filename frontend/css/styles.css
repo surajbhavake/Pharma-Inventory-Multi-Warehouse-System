@@ -1,0 +1,33 @@
+body {
+    background: #f4f6f9;
+}
+
+.main-content {
+    margin-left: 250px;
+    min-height: 100vh;
+}
+
+.sidebar-link {
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: 0.2s;
+}
+
+.sidebar-link:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.active-sidebar {
+    background: #0d6efd;
+    color: white !important;
+    font-weight: bold;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.card-shadow {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}

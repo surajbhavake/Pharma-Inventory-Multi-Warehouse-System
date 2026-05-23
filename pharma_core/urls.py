@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/v1/', include('inventory.urls', namespace='inventory')),
     # path('api/v1/', include('inventory.urls', namespace='inventory')),  # Coming soon
     # path('api/v1/', include('recalls.urls', namespace='recalls')),  # Coming soon
+    path("api/v1/", include("recalls.urls")),
     
 ]
 admin.site.site_header = "Pharma Inventory Admin"
