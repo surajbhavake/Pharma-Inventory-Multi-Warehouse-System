@@ -1,517 +1,628 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pharma ERP — Dashboard</title>
 
-    <meta charset="UTF-8">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-    <title>
-        Pharma ERP Dashboard
-    </title>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
-    <!-- Bootstrap -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Bootstrap Icons -->
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    >
+  <style>
+    /* ── CSS Variables ───────────────────────────────────── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2230;
+      --border:    rgba(255,255,255,0.07);
+      --text:      #e6edf3;
+      --muted:     #7d8590;
+      --accent:    #3b82f6;
+      --accent2:   #10b981;
+      --warning:   #f59e0b;
+      --danger:    #ef4444;
+      --radius:    14px;
+      --shadow:    0 4px 24px rgba(0,0,0,0.4);
+      --font:      'DM Sans', sans-serif;
+      --mono:      'DM Mono', monospace;
+      --transition: 0.2s ease;
+    }
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    /* ── Reset / Base ────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- Custom CSS -->
-    <link
-        rel="stylesheet"
-        href="./css/styles.css"
-    >
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+    }
 
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+     
+      z-index: 100;
+      transition: transform var(--transition);
+    }
+
+    .sidebar-brand {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand .brand-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-ver {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .sidebar-nav { padding: 16px 12px; flex: 1; overflow-y: auto; }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 8px 8px 6px;
+      margin-top: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: var(--accent); }
+    .nav-item i { font-size: 16px; width: 20px; }
+
+    .sidebar-footer {
+      
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 10px;
+    }
+
+    .avatar {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .user-name { font-size: 13px; font-weight: 600; }
+    .user-role { font-size: 11px; color: var(--muted); }
+
+    /* ── Main Content ────────────────────────────────────── */
+    .main-content {
+      margin-left: 240px;
+      flex: 1;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    /* ── Page Header ─────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .header-badges { display: flex; gap: 8px; align-items: center; }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: var(--mono);
+    }
+
+    .badge-pill.green  { background: rgba(16,185,129,0.12); color: var(--accent2); border: 1px solid rgba(16,185,129,0.2); }
+    .badge-pill.blue   { background: rgba(59,130,246,0.12); color: var(--accent);  border: 1px solid rgba(59,130,246,0.2); }
+
+    .dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 2s infinite; }
+    .dot.green { background: var(--accent2); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── KPI Cards ───────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform var(--transition), box-shadow var(--transition);
+      animation: fadeSlideUp 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.10s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.20s; }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .kpi-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 32px; font-weight: 700; letter-spacing: -1px; font-family: var(--mono); line-height: 1; }
+    .kpi-value.danger { color: var(--danger); }
+
+    .kpi-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon.blue    { background: rgba(59,130,246,0.12);  color: var(--accent); }
+    .kpi-icon.green   { background: rgba(16,185,129,0.12);  color: var(--accent2); }
+    .kpi-icon.yellow  { background: rgba(245,158,11,0.12);  color: var(--warning); }
+    .kpi-icon.red     { background: rgba(239,68,68,0.12);   color: var(--danger); }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card-erp {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card-header-erp {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title-erp {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-family: var(--mono);
+    }
+
+    .tag.blue   { background: rgba(59,130,246,0.12);  color: var(--accent); }
+    .tag.green  { background: rgba(16,185,129,0.12);  color: var(--accent2); }
+    .tag.red    { background: rgba(239,68,68,0.12);   color: var(--danger); }
+    .tag.yellow { background: rgba(245,158,11,0.12);  color: var(--warning); }
+
+    /* ── Charts row ──────────────────────────────────────── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .chart-wrap { height: 280px; }
+
+    /* ── Alerts row ──────────────────────────────────────── */
+    .alerts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    /* ── Alert List ──────────────────────────────────────── */
+    .alert-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+
+    .alert-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--surface2);
+      border-radius: 10px;
+      font-size: 13px;
+      transition: background var(--transition);
+    }
+
+    .alert-list li:hover { background: rgba(255,255,255,0.05); }
+    .alert-list li .item-name { font-weight: 600; }
+    .alert-list li .item-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .badge-status {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 50px;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-status.red    { background: rgba(239,68,68,0.15);  color: var(--danger); }
+    .badge-status.yellow { background: rgba(245,158,11,0.15); color: var(--warning); }
+
+    .empty-msg {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    /* ── Audit Table ─────────────────────────────────────── */
+    .audit-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .audit-table th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .audit-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    .audit-table tbody tr:last-child td { border-bottom: none; }
+
+    .audit-table tbody tr {
+      transition: background var(--transition);
+    }
+
+    .audit-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    .action-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      text-transform: uppercase;
+    }
+
+    .action-badge.create { background: rgba(16,185,129,0.15);  color: var(--accent2); }
+    .action-badge.update { background: rgba(59,130,246,0.15);  color: var(--accent); }
+    .action-badge.delete { background: rgba(239,68,68,0.15);   color: var(--danger); }
+    .action-badge.other  { background: rgba(255,255,255,0.07); color: var(--muted); }
+
+    .ts { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    /* view all link */
+    .view-all {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 5px 12px;
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 6px;
+      transition: background var(--transition);
+    }
+
+    .view-all:hover { background: rgba(59,130,246,0.1); color: var(--accent); }
+
+    /* Loading skeleton */
+    .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, rgba(255,255,255,0.04) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; height: 14px; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 1200px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid, .alerts-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-
 <body>
 
-<!-- ===================================================== -->
-<!-- SIDEBAR -->
-<!-- ===================================================== -->
-
-<div id="sidebar-container"></div>
-
-<!-- ===================================================== -->
-<!-- MAIN CONTENT -->
-<!-- ===================================================== -->
-
-<div class="main-content p-4">
-
-    <!-- ===================================================== -->
-    <!-- TOP HEADER -->
-    <!-- ===================================================== -->
-
-    <div
-        class="d-flex justify-content-between align-items-center flex-wrap gap-3"
-    >
-
-        <div>
-
-            <h1 class="fw-bold mb-1">
-                Dashboard
-            </h1>
-
-            <p
-                id="welcomeText"
-                class="text-muted mb-0"
-            >
-                Loading user...
-            </p>
-
-        </div>
-
-        <div class="d-flex gap-2">
-
-            <span class="badge bg-success p-2 px-3">
-                System Active
-            </span>
-
-            <span class="badge bg-primary p-2 px-3">
-                ERP v1.0
-            </span>
-
-        </div>
-
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SIDEBAR                                             -->
+<!-- ═══════════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand d-flex align-items-center gap-2">
+    <div class="brand-icon">💊</div>
+    <div>
+      <div class="brand-name">PharmaERP</div>
+      <div class="brand-ver">v1.0.0</div>
     </div>
+  </div>
 
-    <!-- ===================================================== -->
-    <!-- KPI CARDS -->
-    <!-- ===================================================== -->
+  <nav class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <a href="./index.html" class="nav-item active">
+      <i class="bi bi-grid-1x2-fill"></i> Dashboard
+    </a>
+    <a href="./users.html" class="nav-item">
+      <i class="bi bi-stack"></i> User 
+    </a>
 
-    <div class="row mt-4 g-4">
 
-        <!-- Medicines -->
+    <div class="nav-label">Inventory</div>
+    <a href="./medicines.html" class="nav-item">
+      <i class="bi bi-capsule-pill"></i> Medicines
+    </a>
+    <a href="./batches.html" class="nav-item">
+      <i class="bi bi-box-seam"></i> Batches
+    </a>
+    <a href="./warehouses.html" class="nav-item">
+      <i class="bi bi-buildings"></i> Warehouses
+    </a>
+    <a href="./stock-allocation.html" class="nav-item">
+      <i class="bi bi-stack"></i> Stock 
+    </a>
 
-        <div class="col-lg-3 col-md-6">
 
-            <div class="card card-shadow h-100">
+    <div class="nav-label">Compliance</div>
+    <a href="./recalls.html" class="nav-item">
+      <i class="bi bi-exclamation-triangle"></i> Recalls
+    </a>
+    <a href="./audit-logs.html" class="nav-item">
+      <i class="bi bi-journal-text"></i> Audit Logs
+    </a>
 
-                <div class="card-body">
+     <div class="nav-label">Transfers</div>
+    <a href="./stock-transfer.html"  class="nav-item"><i class="bi bi-arrow-left-right"></i> Stock Transfer</a>
+  </nav>
+  </nav>
 
-                    <div
-                        class="d-flex justify-content-between align-items-center"
-                    >
-
-                        <div>
-
-                            <h6 class="text-muted">
-                                Total Medicines
-                            </h6>
-
-                            <h2
-                                id="medicineCount"
-                                class="fw-bold"
-                            >
-                                0
-                            </h2>
-
-                        </div>
-
-                        <div
-                            class="bg-primary bg-opacity-10 p-3 rounded-circle"
-                        >
-                            <i
-                                class="bi bi-capsule-pill fs-3 text-primary"
-                            ></i>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- Batches -->
-
-        <div class="col-lg-3 col-md-6">
-
-            <div class="card card-shadow h-100">
-
-                <div class="card-body">
-
-                    <div
-                        class="d-flex justify-content-between align-items-center"
-                    >
-
-                        <div>
-
-                            <h6 class="text-muted">
-                                Total Batches
-                            </h6>
-
-                            <h2
-                                id="batchCount"
-                                class="fw-bold"
-                            >
-                                0
-                            </h2>
-
-                        </div>
-
-                        <div
-                            class="bg-success bg-opacity-10 p-3 rounded-circle"
-                        >
-                            <i
-                                class="bi bi-box-seam fs-3 text-success"
-                            ></i>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- Warehouses -->
-
-        <div class="col-lg-3 col-md-6">
-
-            <div class="card card-shadow h-100">
-
-                <div class="card-body">
-
-                    <div
-                        class="d-flex justify-content-between align-items-center"
-                    >
-
-                        <div>
-
-                            <h6 class="text-muted">
-                                Warehouses
-                            </h6>
-
-                            <h2
-                                id="warehouseCount"
-                                class="fw-bold"
-                            >
-                                0
-                            </h2>
-
-                        </div>
-
-                        <div
-                            class="bg-warning bg-opacity-10 p-3 rounded-circle"
-                        >
-                            <i
-                                class="bi bi-buildings fs-3 text-warning"
-                            ></i>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- Recalls -->
-
-        <div class="col-lg-3 col-md-6">
-
-            <div class="card card-shadow h-100">
-
-                <div class="card-body">
-
-                    <div
-                        class="d-flex justify-content-between align-items-center"
-                    >
-
-                        <div>
-
-                            <h6 class="text-muted">
-                                Active Recalls
-                            </h6>
-
-                            <h2
-                                id="recallCount"
-                                class="fw-bold text-danger"
-                            >
-                                0
-                            </h2>
-
-                        </div>
-
-                        <div
-                            class="bg-danger bg-opacity-10 p-3 rounded-circle"
-                        >
-                            <i
-                                class="bi bi-exclamation-triangle fs-3 text-danger"
-                            ></i>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="avatar" id="sidebarAvatar">—</div>
+      <div>
+        <div class="user-name" id="sidebarName">Loading…</div>
+        <div class="user-role" id="sidebarRole">—</div>
+      </div>
     </div>
+  </div>
+</aside>
 
-    <!-- ===================================================== -->
-    <!-- ANALYTICS SECTION -->
-    <!-- ===================================================== -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MAIN                                                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<main class="main-content">
 
-    <div class="row mt-5 g-4">
-
-        <!-- Stock Distribution -->
-
-        <div class="col-lg-6">
-
-            <div class="card card-shadow h-100">
-
-                <div class="card-body">
-
-                    <div
-                        class="d-flex justify-content-between align-items-center mb-4"
-                    >
-
-                        <h5 class="fw-bold mb-0">
-                            Stock Distribution
-                        </h5>
-
-                        <span class="badge bg-primary">
-                            Warehouses
-                        </span>
-
-                    </div>
-
-                    <div style="height: 350px;">
-
-                        <canvas id="stockChart"></canvas>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- Batch Analytics -->
-
-        <div class="col-lg-6">
-
-            <div class="card card-shadow h-100">
-
-                <div class="card-body">
-
-                    <div
-                        class="d-flex justify-content-between align-items-center mb-4"
-                    >
-
-                        <h5 class="fw-bold mb-0">
-                            Batch Analytics
-                        </h5>
-
-                        <span class="badge bg-success">
-                            Status
-                        </span>
-
-                    </div>
-
-                    <div style="height: 350px;">
-
-                        <canvas id="batchChart"></canvas>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-sub" id="welcomeText">Loading…</p>
     </div>
-
-    <!-- ===================================================== -->
-    <!-- ALERTS SECTION -->
-    <!-- ===================================================== -->
-
-    <div class="row mt-5 g-4">
-
-        <!-- Low Stock -->
-
-        <div class="col-lg-6">
-
-            <div class="card card-shadow h-100 border-0">
-
-                <div class="card-body">
-
-                    <div
-                        class="d-flex justify-content-between align-items-center mb-3"
-                    >
-
-                        <h5 class="fw-bold text-danger mb-0">
-                            Low Stock Alerts
-                        </h5>
-
-                        <i
-                            class="bi bi-exclamation-circle text-danger fs-4"
-                        ></i>
-
-                    </div>
-
-                    <ul
-                        id="lowStockList"
-                        class="list-group"
-                    >
-
-                        <li class="list-group-item">
-                            Loading...
-                        </li>
-
-                    </ul>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- Expiring Batches -->
-
-        <div class="col-lg-6">
-
-            <div class="card card-shadow h-100 border-0">
-
-                <div class="card-body">
-
-                    <div
-                        class="d-flex justify-content-between align-items-center mb-3"
-                    >
-
-                        <h5 class="fw-bold text-warning mb-0">
-                            Expiring Batches
-                        </h5>
-
-                        <i
-                            class="bi bi-clock-history text-warning fs-4"
-                        ></i>
-
-                    </div>
-
-                    <ul
-                        id="expiryList"
-                        class="list-group"
-                    >
-
-                        <li class="list-group-item">
-                            Loading...
-                        </li>
-
-                    </ul>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <div class="header-badges">
+      <span class="badge-pill green"><span class="dot green"></span>System Active</span>
+      <span class="badge-pill blue">ERP v1.0</span>
     </div>
+  </div>
 
-    <!-- ===================================================== -->
-    <!-- RECENT ACTIVITY -->
-    <!-- ===================================================== -->
-
-    <div class="card card-shadow border-0 mt-5">
-
-        <div class="card-body">
-
-            <div
-                class="d-flex justify-content-between align-items-center mb-4"
-            >
-
-                <h4 class="fw-bold mb-0">
-                    Recent Audit Activity
-                </h4>
-
-                <a
-                    href="./audit-logs.html"
-                    class="btn btn-outline-primary btn-sm"
-                >
-                    View All
-                </a>
-
-            </div>
-
-            <div class="table-responsive">
-
-                <table class="table table-hover align-middle">
-
-                    <thead class="table-dark">
-
-                        <tr>
-
-                            <th>Action</th>
-                            <th>User</th>
-                            <th>Entity</th>
-                            <th>Description</th>
-                            <th>Date</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody id="recentActivityTable">
-
-                        <tr>
-
-                            <td colspan="5">
-                                Loading...
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Total Medicines</div>
+        <div class="kpi-value" id="medicineCount">—</div>
+      </div>
+      <div class="kpi-icon blue"><i class="bi bi-capsule-pill"></i></div>
     </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Total Batches</div>
+        <div class="kpi-value" id="batchCount">—</div>
+      </div>
+      <div class="kpi-icon green"><i class="bi bi-box-seam"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Warehouses</div>
+        <div class="kpi-value" id="warehouseCount">—</div>
+      </div>
+      <div class="kpi-icon yellow"><i class="bi bi-buildings"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-label">Active Recalls</div>
+        <div class="kpi-value danger" id="recallCount">—</div>
+      </div>
+      <div class="kpi-icon red"><i class="bi bi-exclamation-triangle"></i></div>
+    </div>
+  </div>
 
-</div>
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="card-erp">
+      <div class="card-header-erp">
+        <span class="card-title-erp">Stock Distribution</span>
+        <span class="tag blue">By Warehouse</span>
+      </div>
+      <div class="chart-wrap"><canvas id="stockChart"></canvas></div>
+    </div>
+    <div class="card-erp">
+      <div class="card-header-erp">
+        <span class="card-title-erp">Batch Analytics</span>
+        <span class="tag green">By Status</span>
+      </div>
+      <div class="chart-wrap"><canvas id="batchChart"></canvas></div>
+    </div>
+  </div>
 
-<!-- ===================================================== -->
-<!-- SIDEBAR JS -->
-<!-- ===================================================== -->
+  <!-- Alerts -->
+  <div class="alerts-grid">
+    <div class="card-erp">
+      <div class="card-header-erp">
+        <span class="card-title-erp">Low Stock Alerts</span>
+        <span class="tag red"><i class="bi bi-exclamation-circle me-1"></i>Critical</span>
+      </div>
+      <ul class="alert-list" id="lowStockList">
+        <li><div class="skeleton" style="width:60%"></div></li>
+        <li><div class="skeleton" style="width:45%"></div></li>
+      </ul>
+    </div>
+    <div class="card-erp">
+      <div class="card-header-erp">
+        <span class="card-title-erp">Expiring Batches</span>
+        <span class="tag yellow"><i class="bi bi-clock-history me-1"></i>Soon</span>
+      </div>
+      <ul class="alert-list" id="expiryList">
+        <li><div class="skeleton" style="width:70%"></div></li>
+        <li><div class="skeleton" style="width:50%"></div></li>
+      </ul>
+    </div>
+  </div>
 
-<script
-    type="module"
-    src="./js/sidebar.js"
-></script>
+  <!-- Audit Logs -->
+  <div class="card-erp">
+    <div class="card-header-erp">
+      <span class="card-title-erp">Recent Audit Activity</span>
+      <a href="./audit-logs.html" class="view-all">View All →</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>User</th>
+            <th>Entity</th>
+            <th>Description</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="recentActivityTable">
+          <tr><td colspan="5" class="empty-msg"><div class="skeleton" style="width:40%;margin:auto"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-<!-- ===================================================== -->
-<!-- DASHBOARD JS -->
-<!-- ===================================================== -->
+</main>
 
-<script
-    type="module"
-    src="./js/dashboard.js"
-></script>
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DASHBOARD JS (inline module)                        -->
+<!-- ═══════════════════════════════════════════════════ -->
+<script type="module" src="./js/sidebar.js"></script>
+<script type="module" src="./js/dashboard.js"></script>
 
 </body>
 </html>

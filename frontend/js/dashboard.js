@@ -1,574 +1,341 @@
+// ═══════════════════════════════════════════════════════
+// PHARMA ERP — dashboard.js  (optimised)
+// ═══════════════════════════════════════════════════════
+
 const API_BASE = "http://127.0.0.1:8000/api/v1";
 
+// ── Auth ─────────────────────────────────────────────────
 const token = sessionStorage.getItem("access");
+if (!token) window.location.href = "./login.html";
 
-if (!token) {
+// ── Generic authenticated fetch ───────────────────────────
+async function apiFetch(endpoint) {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
 
+  if (res.status === 401) {
+    sessionStorage.clear();
+    alert("Session expired. Please log in again.");
     window.location.href = "./login.html";
+    return null;
+  }
+
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
+// Helper — extract array from paginated or plain response
+const toArray = (r) => r?.results ?? (Array.isArray(r) ? r : []);
 
-// ======================================================
-// AUTH FETCH
-// ======================================================
+// Helper — extract count from response
+const toCount = (r) =>
+  r?.count ?? r?.results?.length ?? (Array.isArray(r) ? r.length : 0);
 
-async function apiFetch(url) {
+// Helper — safe DOM text setter
+const setText = (id, val) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+};
 
-    const response = await fetch(url, {
+// ── Chart defaults (dark theme) ───────────────────────────
+Chart.defaults.color = "#7d8590";
+Chart.defaults.borderColor = "rgba(255,255,255,0.07)";
 
-        headers: {
-
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-        }
-
-    });
-
-    if (response.status === 401) {
-
-        sessionStorage.clear();
-
-        alert("Session expired");
-
-        window.location.href = "./login.html";
-
-        return;
-    }
-
-    if (!response.ok) {
-
-        const text = await response.text();
-
-        console.error("API ERROR:", text);
-
-        throw new Error(text);
-    }
-
-    return response.json();
-}
+const PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 
-// ======================================================
-// LOAD PROFILE
-// ======================================================
-
+// ═══════════════════════════════════════════════════════
+// 1. PROFILE
+// ═══════════════════════════════════════════════════════
 async function loadProfile() {
+  const user = await apiFetch("/auth/profile/");
+  if (!user) return;
 
-    try {
+  setText("welcomeText", `Welcome back, ${user.full_name} (${user.role})`);
 
-        const user = await apiFetch(
-            `${API_BASE}/auth/profile/`
-        );
+  // Sidebar user info (if elements exist in this template)
+  setText("sidebarName", user.full_name);
+  setText("sidebarRole", user.role);
 
-        console.log("PROFILE:", user);
-
-        document.getElementById(
-            "welcomeText"
-        ).innerHTML = `
-            Welcome back,
-            <strong>${user.full_name}</strong>
-            (${user.role})
-        `;
-
-    } catch (error) {
-
-        console.error("PROFILE ERROR:", error);
-    }
+  const avatarEl = document.getElementById("sidebarAvatar");
+  if (avatarEl) avatarEl.textContent = user.full_name?.[0]?.toUpperCase() ?? "?";
 }
 
 
-// ======================================================
-// LOAD KPI COUNTS
-// ======================================================
-
+// ═══════════════════════════════════════════════════════
+// 2. KPI COUNTS  (parallel fetch)
+// ═══════════════════════════════════════════════════════
 async function loadCounts() {
+  const [medicines, batches, warehouses, recalls] = await Promise.all([
+    apiFetch("/medicines/"),
+    apiFetch("/batches/"),
+    apiFetch("/warehouses/"),
+    apiFetch("/recalls/"),
+  ]);
 
-    try {
-
-        const medicines = await apiFetch(
-            `${API_BASE}/medicines/`
-        );
-
-        const batches = await apiFetch(
-            `${API_BASE}/batches/`
-        );
-
-        const warehouses = await apiFetch(
-            `${API_BASE}/warehouses/`
-        );
-
-        const recalls = await apiFetch(
-            `${API_BASE}/recalls/`
-        );
-
-        console.log("MEDICINES:", medicines);
-        console.log("BATCHES:", batches);
-        console.log("WAREHOUSES:", warehouses);
-        console.log("RECALLS:", recalls);
-
-        document.getElementById(
-            "medicineCount"
-        ).innerText =
-            medicines.count ||
-            medicines.results?.length ||
-            medicines.length ||
-            0;
-
-        document.getElementById(
-            "batchCount"
-        ).innerText =
-            batches.count ||
-            batches.results?.length ||
-            batches.length ||
-            0;
-
-        document.getElementById(
-            "warehouseCount"
-        ).innerText =
-            warehouses.count ||
-            warehouses.results?.length ||
-            warehouses.length ||
-            0;
-
-        document.getElementById(
-            "recallCount"
-        ).innerText =
-            recalls.count ||
-            recalls.results?.length ||
-            recalls.length ||
-            0;
-
-    } catch (error) {
-
-        console.error("COUNT ERROR:", error);
-    }
+  setText("medicineCount",  toCount(medicines));
+  setText("batchCount",     toCount(batches));
+  setText("warehouseCount", toCount(warehouses));
+  setText("recallCount",    toCount(recalls));
 }
 
 
-// ======================================================
-// STOCK DISTRIBUTION CHART
-// ======================================================
-
+// ═══════════════════════════════════════════════════════
+// 3. STOCK DISTRIBUTION CHART
+// ═══════════════════════════════════════════════════════
 async function loadStockChart() {
+  const response = await apiFetch("/warehouse-stock/");
+  if (!response) return;
 
-    try {
+  const stocks = toArray(response);
 
-        const response = await apiFetch(
-            `${API_BASE}/warehouse-stock/`
-        );
+  // Aggregate by warehouse
+  const totals = stocks.reduce((acc, s) => {
+    const name = s.warehouse?.name ?? "Unknown";
+    acc[name] = (acc[name] ?? 0) + (s.quantity ?? 0);
+    return acc;
+  }, {});
 
-        console.log("WAREHOUSE STOCK:", response);
+  const ctx = document.getElementById("stockChart");
+  if (!ctx) return;
 
-        const stocks =
-            response.results || response;
-
-        const warehouseTotals = {};
-
-        stocks.forEach(stock => {
-
-            const warehouse =
-                stock.warehouse?.name ||
-                "Unknown";
-
-            const quantity =
-                stock.quantity || 0;
-
-            if (!warehouseTotals[warehouse]) {
-
-                warehouseTotals[warehouse] = 0;
-            }
-
-            warehouseTotals[warehouse] += quantity;
-        });
-
-        const ctx =
-            document.getElementById(
-                "stockChart"
-            );
-
-        new Chart(ctx, {
-
-            type: "doughnut",
-
-            data: {
-
-                labels:
-                    Object.keys(warehouseTotals),
-
-                datasets: [{
-
-                    label: "Stock",
-
-                    data:
-                        Object.values(
-                            warehouseTotals
-                        ),
-
-                    borderWidth: 2,
-
-                }]
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-            }
-        });
-
-    } catch (error) {
-
-        console.error(
-            "STOCK CHART ERROR:",
-            error
-        );
-    }
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(totals),
+      datasets: [{
+        data:            Object.values(totals),
+        backgroundColor: PALETTE,
+        borderColor:     "rgba(0,0,0,0.3)",
+        borderWidth:     2,
+        hoverOffset:     6,
+      }],
+    },
+    options: {
+      responsive:          true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { boxWidth: 12, padding: 16, font: { size: 12 } },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.label}: ${ctx.formattedValue} units`,
+          },
+        },
+      },
+    },
+  });
 }
 
 
-// ======================================================
-// BATCH ANALYTICS CHART
-// ======================================================
-
+// ═══════════════════════════════════════════════════════
+// 4. BATCH ANALYTICS CHART
+// ═══════════════════════════════════════════════════════
 async function loadBatchChart() {
+  const response = await apiFetch("/batches/");
+  if (!response) return;
 
-    try {
+  const batches = toArray(response);
+  const today   = new Date();
 
-        const response = await apiFetch(
-            `${API_BASE}/batches/`
-        );
+  let active = 0, recalled = 0, expired = 0;
 
-        console.log("BATCHES:", response);
-
-        const batches =
-            response.results || response;
-
-        let active = 0;
-        let recalled = 0;
-        let expired = 0;
-
-        const today = new Date();
-
-        batches.forEach(batch => {
-
-            if (batch.is_recalled) {
-
-                recalled++;
-
-            } else {
-
-                const expiry =
-                    new Date(batch.expiry_date);
-
-                if (expiry < today) {
-
-                    expired++;
-
-                } else {
-
-                    active++;
-                }
-            }
-        });
-
-        const ctx =
-            document.getElementById(
-                "batchChart"
-            );
-
-        new Chart(ctx, {
-
-            type: "bar",
-
-            data: {
-
-                labels: [
-                    "Active",
-                    "Recalled",
-                    "Expired"
-                ],
-
-                datasets: [{
-
-                    label: "Batches",
-
-                    data: [
-                        active,
-                        recalled,
-                        expired
-                    ],
-
-                    borderWidth: 1,
-                }]
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-            }
-        });
-
-    } catch (error) {
-
-        console.error(
-            "BATCH CHART ERROR:",
-            error
-        );
+  batches.forEach((b) => {
+    if (b.is_recalled) {
+      recalled++;
+    } else if (new Date(b.expiry_date) < today) {
+      expired++;
+    } else {
+      active++;
     }
+  });
+
+  const ctx = document.getElementById("batchChart");
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels:   ["Active", "Recalled", "Expired"],
+      datasets: [{
+        label:           "Batches",
+        data:            [active, recalled, expired],
+        backgroundColor: ["rgba(16,185,129,0.7)", "rgba(239,68,68,0.7)", "rgba(245,158,11,0.7)"],
+        borderColor:     ["#10b981", "#ef4444", "#f59e0b"],
+        borderWidth:     1,
+        borderRadius:    6,
+      }],
+    },
+    options: {
+      responsive:          true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (ctx) => ` ${ctx.raw} batches` },
+        },
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+      },
+    },
+  });
 }
 
 
-// ======================================================
-// LOW STOCK
-// ======================================================
-
+// ═══════════════════════════════════════════════════════
+// 5. LOW STOCK ALERTS
+// ═══════════════════════════════════════════════════════
 async function loadLowStock() {
+  const el = document.getElementById("lowStockList");
+  if (!el) return;
 
-    try {
+  const response = await apiFetch("/alerts/low-stock/");
+  if (!response) return;
 
-        const response = await apiFetch(
-            `${API_BASE}/alerts/low-stock/`
-        );
+  const items = toArray(response);
+  el.innerHTML = "";
 
-        console.log("LOW STOCK:", response);
+  if (!items.length) {
+    el.innerHTML = `<li><span class="empty-msg">✓ No low stock alerts</span></li>`;
+    return;
+  }
 
-        const medicines =
-            response.results || response;
-
-        const list =
-            document.getElementById(
-                "lowStockList"
-            );
-
-        list.innerHTML = "";
-
-        if (medicines.length === 0) {
-
-            list.innerHTML = `
-                <li class="list-group-item">
-                    No low stock alerts
-                </li>
-            `;
-
-            return;
-        }
-
-        medicines.forEach(item => {
-
-            list.innerHTML += `
-
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-
-                    <div>
-
-                        <strong>
-                            ${item.name}
-                        </strong>
-
-                    </div>
-
-                    <span class="badge bg-danger">
-                        LOW
-                    </span>
-
-                </li>
-            `;
-        });
-
-    } catch (error) {
-
-        console.error(
-            "LOW STOCK ERROR:",
-            error
-        );
-    }
+  items.forEach((item) => {
+    el.insertAdjacentHTML(
+      "beforeend",
+      `<li>
+        <div>
+          <div class="item-name">${escapeHtml(item.name)}</div>
+          ${item.category ? `<div class="item-sub">${escapeHtml(item.category)}</div>` : ""}
+        </div>
+        <span class="badge-status red">LOW</span>
+      </li>`
+    );
+  });
 }
 
 
-// ======================================================
-// EXPIRING BATCHES
-// ======================================================
-
+// ═══════════════════════════════════════════════════════
+// 6. EXPIRING BATCHES
+// ═══════════════════════════════════════════════════════
 async function loadExpiringBatches() {
+  const el = document.getElementById("expiryList");
+  if (!el) return;
 
-    try {
+  const response = await apiFetch("/batches/expiring_soon/");
+  if (!response) return;
 
-        const response = await apiFetch(
-            `${API_BASE}/batches/expiring_soon/`
-        );
+  const batches = response.batches ?? [];
+  el.innerHTML = "";
 
-        console.log("EXPIRING:", response);
+  if (!batches.length) {
+    el.innerHTML = `<li><span class="empty-msg">✓ No batches expiring soon</span></li>`;
+    return;
+  }
 
-        const batches =
-            response.batches || [];
-
-        const list =
-            document.getElementById(
-                "expiryList"
-            );
-
-        list.innerHTML = "";
-
-        if (batches.length === 0) {
-
-            list.innerHTML = `
-                <li class="list-group-item">
-                    No expiring batches
-                </li>
-            `;
-
-            return;
-        }
-
-        batches.forEach(batch => {
-
-            list.innerHTML += `
-
-                <li class="list-group-item">
-
-                    <div class="d-flex justify-content-between">
-
-                        <div>
-
-                            <strong>
-                                ${batch.batch_number}
-                            </strong>
-
-                            <div class="small text-muted">
-
-                                ${batch.medicine_name}
-
-                            </div>
-
-                        </div>
-
-                        <span class="badge bg-warning text-dark">
-
-                            ${batch.expiry_date}
-
-                        </span>
-
-                    </div>
-
-                </li>
-            `;
-        });
-
-    } catch (error) {
-
-        console.error(
-            "EXPIRY ERROR:",
-            error
-        );
-    }
+  batches.forEach((b) => {
+    el.insertAdjacentHTML(
+      "beforeend",
+      `<li>
+        <div>
+          <div class="item-name">${escapeHtml(b.batch_number)}</div>
+          <div class="item-sub">${escapeHtml(b.medicine_name ?? "")}</div>
+        </div>
+        <span class="badge-status yellow">${escapeHtml(b.expiry_date)}</span>
+      </li>`
+    );
+  });
 }
 
 
-// ======================================================
-// RECENT AUDIT LOGS
-// ======================================================
+// ═══════════════════════════════════════════════════════
+// 7. RECENT AUDIT LOGS
+// ═══════════════════════════════════════════════════════
+const ACTION_CLASS = {
+  CREATE: "create",
+  UPDATE: "update",
+  DELETE: "delete",
+};
+
+function actionBadge(action = "") {
+  const cls = ACTION_CLASS[action.toUpperCase()] ?? "other";
+  return `<span class="action-badge ${cls}">${escapeHtml(action) || "—"}</span>`;
+}
 
 async function loadAuditLogs() {
+  const tbody = document.getElementById("recentActivityTable");
+  if (!tbody) return;
 
-    try {
+  const response = await apiFetch("/audit-logs/");
+  if (!response) return;
 
-        const response = await apiFetch(
-            `${API_BASE}/audit-logs/`
-        );
+  const logs = toArray(response).slice(0, 10);
+  tbody.innerHTML = "";
 
-        console.log("AUDIT LOGS:", response);
+  if (!logs.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">No audit logs found</td></tr>`;
+    return;
+  }
 
-        const logs =
-            response.results || response;
+  logs.forEach((log) => {
+    const date = log.created_at
+      ? new Date(log.created_at).toLocaleString()
+      : "—";
 
-        const table =
-            document.getElementById(
-                "recentActivityTable"
-            );
-
-        table.innerHTML = "";
-
-        if (logs.length === 0) {
-
-            table.innerHTML = `
-
-                <tr>
-
-                    <td colspan="5">
-                        No audit logs found
-                    </td>
-
-                </tr>
-            `;
-
-            return;
-        }
-
-        logs.slice(0, 10).forEach(log => {
-
-            table.innerHTML += `
-
-                <tr>
-
-                    <td>
-                        ${log.action || "-"}
-                    </td>
-
-                    <td>
-                        ${log.user_name  || "-"}
-                    </td>
-
-                    <td>
-                        ${log.entity_type || "-"}
-                    </td>
-
-                    <td>
-                        ${log.description || "-"}
-                    </td>
-
-                    <td>
-                        ${new Date(
-                            log.created_at
-                        ).toLocaleString()}
-                    </td>
-
-                </tr>
-            `;
-        });
-
-    } catch (error) {
-
-        console.error(
-            "AUDIT ERROR:",
-            error
-        );
-    }
+    tbody.insertAdjacentHTML(
+      "beforeend",
+      `<tr>
+        <td>${actionBadge(log.action)}</td>
+        <td>${escapeHtml(log.user_name ?? "—")}</td>
+        <td>${escapeHtml(log.entity_type ?? "—")}</td>
+        <td>${escapeHtml(log.description ?? "—")}</td>
+        <td class="ts">${date}</td>
+      </tr>`
+    );
+  });
 }
 
 
-// ======================================================
-// INITIALIZE DASHBOARD
-// ======================================================
+// ═══════════════════════════════════════════════════════
+// SECURITY: XSS prevention helper
+// ═══════════════════════════════════════════════════════
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
+
+// ═══════════════════════════════════════════════════════
+// INIT — run profile + counts in parallel, then rest
+// ═══════════════════════════════════════════════════════
 async function initDashboard() {
+  console.log("dashboard.js loaded", new Date().toLocaleTimeString());
+  try {
+    // Critical above-the-fold data first
+    await Promise.all([loadProfile(), loadCounts()]);
 
-    await loadProfile();
-
-    await loadCounts();
-
-    await loadStockChart();
-
-    await loadBatchChart();
-
-    await loadLowStock();
-
-    await loadExpiringBatches();
-
-    await loadAuditLogs();
+    // Charts and lists can race — failures are isolated
+    await Promise.allSettled([
+      loadStockChart(),
+      loadBatchChart(),
+      loadLowStock(),
+      loadExpiringBatches(),
+      loadAuditLogs(),
+    ]);
+  } catch (err) {
+    console.error("Dashboard init error:", err);
+  }
 }
-
 
 initDashboard();

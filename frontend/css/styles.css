@@ -1,33 +1,265 @@
-body {
-    background: #f4f6f9;
+/* ═══════════════════════════════════════════════════════
+   PHARMA ERP — sidebar.css
+   Drop into your /css/ folder and link in every page.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Variables (shared with dashboard) ─────────────────── */
+:root {
+  --sb-width:      240px;
+  --sb-bg:         #161b22;
+  --sb-border:     rgba(255,255,255,0.07);
+  --sb-text:       #e6edf3;
+  --sb-muted:      #7d8590;
+  --sb-surface:    #1c2230;
+  --sb-accent:     #3b82f6;
+  --sb-danger:     #ef4444;
+  --sb-radius:     8px;
+  --sb-transition: 0.18s ease;
+  --sb-font:       'DM Sans', sans-serif;
+  --sb-mono:       'DM Mono', monospace;
 }
 
+/* ── Sidebar shell ──────────────────────────────────────── */
+.erp-sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sb-width);
+  height: 100vh;
+  background: var(--sb-bg);
+  border-right: 1px solid var(--sb-border);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--sb-font);
+  z-index: 200;
+  transition: transform var(--sb-transition);
+  overflow: hidden;
+}
+
+/* ── Brand ──────────────────────────────────────────────── */
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 18px 18px;
+  border-bottom: 1px solid var(--sb-border);
+  flex-shrink: 0;
+}
+
+.sb-brand-icon {
+  width: 36px; height: 36px;
+  background: var(--sb-accent);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.sb-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sb-text);
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+
+.sb-brand-ver {
+  font-size: 10px;
+  color: var(--sb-muted);
+  font-family: var(--sb-mono);
+  margin-top: 2px;
+}
+
+/* ── Nav ────────────────────────────────────────────────── */
+.sb-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-border) transparent;
+}
+
+.sb-nav::-webkit-scrollbar { width: 4px; }
+.sb-nav::-webkit-scrollbar-thumb { background: var(--sb-border); border-radius: 2px; }
+
+.sb-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  color: var(--sb-muted);
+  padding: 14px 8px 5px;
+  margin-top: 2px;
+}
+
+/* Nav link */
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--sb-radius);
+  color: var(--sb-muted);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background var(--sb-transition), color var(--sb-transition);
+  position: relative;
+  margin-bottom: 1px;
+}
+
+.sb-link:hover {
+  background: var(--sb-surface);
+  color: var(--sb-text);
+}
+
+.sb-link.active {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--sb-accent);
+}
+
+/* Active left bar */
+.sb-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  background: var(--sb-accent);
+  border-radius: 0 3px 3px 0;
+}
+
+/* Icon */
+.sb-icon {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb-icon svg { width: 16px; height: 16px; }
+
+/* Label */
+.sb-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Badge (recall count etc.) */
+.sb-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  background: var(--sb-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--sb-mono);
+  border-radius: 50px;
+  flex-shrink: 0;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+.sb-footer {
+  flex-shrink: 0;
+  padding: 12px;
+  border-top: 1px solid var(--sb-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* User pill */
+.sb-user {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  background: var(--sb-surface);
+  border-radius: var(--sb-radius);
+  min-width: 0;
+}
+
+.sb-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.sb-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--sb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sb-user-role {
+  font-size: 10.5px;
+  color: var(--sb-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Logout button */
+.sb-logout {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: var(--sb-radius);
+  border: 1px solid var(--sb-border);
+  background: transparent;
+  color: var(--sb-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--sb-transition), color var(--sb-transition), border-color var(--sb-transition);
+}
+
+.sb-logout:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--sb-danger);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ── Page offset (apply to .main-content) ───────────────── */
 .main-content {
-    margin-left: 250px;
-    min-height: 100vh;
+  margin-left: var(--sb-width);
 }
 
-.sidebar-link {
-    border-radius: 10px;
-    padding: 12px 14px;
-    transition: 0.2s;
-}
+/* ── Mobile toggle ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .erp-sidebar {
+    transform: translateX(-100%);
+  }
 
-.sidebar-link:hover {
-    background: rgba(255,255,255,0.1);
-}
+  .erp-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+  }
 
-.active-sidebar {
-    background: #0d6efd;
-    color: white !important;
-    font-weight: bold;
-}
+  .main-content {
+    margin-left: 0;
+  }
 
-.card {
-    border: none;
-    border-radius: 15px;
-}
+  /* Overlay behind open sidebar */
+  .sb-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 199;
+  }
 
-.card-shadow {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  .sb-overlay.visible { display: block; }
 }

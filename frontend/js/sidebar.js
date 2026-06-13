@@ -1,131 +1,130 @@
+// ═══════════════════════════════════════════════════════
+// PHARMA ERP — sidebar.js  (optimised)
+// ═══════════════════════════════════════════════════════
+
+const API_BASE = "http://127.0.0.1:8000/api/v1";
+
+// ── Auth guard ────────────────────────────────────────────
 const token = sessionStorage.getItem("access");
-
-if (!token) {
-
-    window.location.href = "./login.html";
-}
+if (!token) window.location.href = "./login.html";
 
 
-// ======================================================
-// LOAD SIDEBAR
-// ======================================================
-
+// ── Inject sidebar HTML, then boot ───────────────────────
 async function loadSidebar() {
+  const container = document.getElementById("sidebar-container");
+  if (!container) return;
 
-    const sidebarContainer =
-        document.getElementById("sidebar-container");
+  try {
+    const res  = await fetch("./components/sidebar.html");
+    if (!res.ok) throw new Error(`Sidebar fetch failed: ${res.status}`);
+    container.innerHTML = await res.text();
+  } catch (err) {
+    console.error("Sidebar load error:", err);
+    return;
+  }
 
-    const response = await fetch(
-        "./components/sidebar.html"
-    );
+  // Run all init tasks in parallel — one failure won't block others
+  await Promise.allSettled([
+    loadProfile(),
+    loadRecallBadge(),
+  ]);
 
-    const html = await response.text();
-
-    sidebarContainer.innerHTML = html;
-
-    initializeSidebar();
+  highlightCurrentPage();
+  setupLogout();
 }
 
 
-// ======================================================
-// INITIALIZE
-// ======================================================
-
-async function initializeSidebar() {
-
-    await loadProfile();
-
-    highlightCurrentPage();
-
-    setupLogout();
-}
-
-
-// ======================================================
-// LOAD USER PROFILE
-// ======================================================
-
+// ── Profile ───────────────────────────────────────────────
 async function loadProfile() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/profile/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-    try {
+    if (res.status === 401) return handleExpiredSession();
+    if (!res.ok) throw new Error(await res.text());
 
-        const response = await fetch(
-            "http://127.0.0.1:8000/api/v1/auth/profile/",
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
+    const user = await res.json();
 
-        const user = await response.json();
+    // Populate sidebar footer
+    setText("sbName",   user.full_name ?? "—");
+    setText("sbRole",   user.role      ?? "—");
 
-        console.log("USER:", user);
+    const avatar = document.getElementById("sbAvatar");
+    if (avatar) avatar.textContent = (user.full_name?.[0] ?? "?").toUpperCase();
 
-        // Hide admin links
-        if (user.role !== "admin") {
-
-            document
-                .querySelectorAll(".admin-only")
-                .forEach(el => {
-                    el.style.display = "none";
-                });
-        }
-
-    } catch (error) {
-
-        console.error(error);
+    // Show admin-only elements
+    if (user.role === "admin") {
+      document.querySelectorAll(".admin-only").forEach(el => {
+        el.style.display = "";
+      });
     }
+
+  } catch (err) {
+    console.error("Profile error:", err);
+  }
 }
 
 
-// ======================================================
-// ACTIVE PAGE HIGHLIGHT
-// ======================================================
+// ── Recall badge (shows count if > 0) ────────────────────
+async function loadRecallBadge() {
+  try {
+    const res = await fetch(`${API_BASE}/recalls/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
 
+    const data  = await res.json();
+    const count = data?.count ?? data?.results?.length ?? (Array.isArray(data) ? data.length : 0);
+
+    const badge = document.getElementById("recallBadge");
+    if (badge && count > 0) {
+      badge.textContent = count > 99 ? "99+" : count;
+      badge.style.display = "inline-flex";
+    }
+  } catch (_) { /* non-critical */ }
+}
+
+
+// ── Active page highlight ─────────────────────────────────
 function highlightCurrentPage() {
+  // Derive page key from filename: "batches.html" → "batches"
+  const page = window.location.pathname.split("/").pop().replace(".html", "");
 
-    const path =
-        window.location.pathname;
-
-    const page =
-        path.split("/").pop().replace(".html", "");
-
-    document
-        .querySelectorAll(".sidebar-link")
-        .forEach(link => {
-
-            const linkPage =
-                link.dataset.page;
-
-            if (
-                page.includes(linkPage)
-            ) {
-
-                link.classList.add(
-                    "active-sidebar"
-                );
-            }
-        });
+  document.querySelectorAll(".sb-link").forEach(link => {
+    const key = link.dataset.page ?? "";
+    // Use startsWith so "dashboard" matches "dashboard" exactly,
+    // avoiding "stock-allocation" accidentally matching "allocation" etc.
+    if (page === key || page.startsWith(key) && key.length > 3) {
+      link.classList.add("active");
+    }
+  });
 }
 
 
-// ======================================================
-// LOGOUT
-// ======================================================
-
+// ── Logout ────────────────────────────────────────────────
 function setupLogout() {
-
-    document
-        .getElementById("logoutBtn")
-        .addEventListener("click", () => {
-
-            sessionStorage.clear();
-
-            window.location.href =
-                "./login.html";
-        });
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
+    sessionStorage.clear();
+    window.location.href = "./login.html";
+  });
 }
 
 
+// ── Session expiry helper ─────────────────────────────────
+function handleExpiredSession() {
+  sessionStorage.clear();
+  alert("Session expired. Please log in again.");
+  window.location.href = "./login.html";
+}
+
+
+// ── Utility ───────────────────────────────────────────────
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+
+// ── Boot ──────────────────────────────────────────────────
 loadSidebar();

@@ -1,540 +1,304 @@
-const API_BASE =
-    "http://127.0.0.1:8000/api/v1";
+// ═══════════════════════════════════════════════════════════
+// PHARMA ERP — stock-allocation.js  (optimised)
+// ═══════════════════════════════════════════════════════════
 
-const token =
-    sessionStorage.getItem("access");
+const API_BASE = "http://127.0.0.1:8000/api/v1";
 
+// ── Auth ──────────────────────────────────────────────────────
+const token = sessionStorage.getItem("access");
+if (!token) window.location.href = "./login.html";
 
-// =====================================================
-// AUTH CHECK
-// =====================================================
+// ── Generic authenticated fetch ───────────────────────────────
+async function apiFetch(endpoint, options = {}) {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+  });
 
-if (!token) {
+  if (res.status === 401) {
+    sessionStorage.clear();
+    showToast("Session expired. Redirecting…", "error");
+    setTimeout(() => (window.location.href = "./login.html"), 1500);
+    return null;
+  }
 
-    window.location.href =
-        "./login.html";
+  return res;
 }
 
-
-// =====================================================
-// COMMON HEADERS
-// =====================================================
-
-const headers = {
-
-    "Content-Type": "application/json",
-
-    Authorization:
-        `Bearer ${token}`,
-};
-
-
-// =====================================================
-// API FETCH WRAPPER
-// =====================================================
-
-async function apiFetch(
-    url,
-    options = {}
-) {
-
-    const response =
-        await fetch(url, {
-
-            ...options,
-
-            headers: {
-
-                ...headers,
-
-                ...(options.headers || {})
-            }
-        });
-
-    if (response.status === 401) {
-
-        sessionStorage.clear();
-
-        alert("Session expired");
-
-        window.location.href =
-            "./login.html";
-
-        return;
-    }
-
-    return response;
+// ── XSS escape ────────────────────────────────────────────────
+function esc(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = "success") {
+  const el   = document.getElementById("toast");
+  const icon = document.getElementById("toastIcon");
+  const txt  = document.getElementById("toastMsg");
 
-// =====================================================
-// LOAD PROFILE
-// =====================================================
+  icon.className = type === "success"
+    ? "bi bi-check-circle-fill text-success"
+    : "bi bi-exclamation-circle-fill text-danger";
 
+  txt.textContent = msg;
+  el.className    = `toast-erp ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+// ── Number formatter ──────────────────────────────────────────
+const fmt = (n) => Number(n ?? 0).toLocaleString("en-IN");
+
+// ── Stock status helper ───────────────────────────────────────
+function stockStatus(qty) {
+  if (qty <= 5)  return { cls: "status-critical", label: "Critical" };
+  if (qty <= 20) return { cls: "status-low",      label: "Low Stock" };
+  return          { cls: "status-healthy",         label: "Healthy" };
+}
+
+// Quantity bar visualiser — scales relative to max stock in visible rows
+let _maxQty = 1;
+
+function qtyBar(qty) {
+  const pct  = Math.min(100, Math.round((qty / _maxQty) * 100));
+  const cls  = qty <= 5 ? "low" : qty <= 20 ? "mid" : "high";
+  return `
+    <div class="qty-bar-wrap">
+      <span class="qty-val">${fmt(qty)}</span>
+      <div class="qty-bar"><div class="qty-fill ${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+}
+
+// ── Load profile ──────────────────────────────────────────────
 async function loadProfile() {
+  try {
+    const res = await apiFetch("/auth/profile/");
+    if (!res) return;
 
-    try {
+    const user = await res.json();
+    const el   = document.getElementById("welcomeText");
+    if (el) el.innerHTML = `Welcome, <strong>${esc(user.full_name)}</strong> (${esc(user.role)})`;
 
-        const response =
-            await apiFetch(
-                `${API_BASE}/auth/profile/`
-            );
+    const avatarEl = document.getElementById("sidebarAvatar");
+    if (avatarEl) avatarEl.textContent = user.full_name?.[0]?.toUpperCase() ?? "?";
+    const nameEl = document.getElementById("sidebarName");
+    if (nameEl) nameEl.textContent = user.full_name;
+    const roleEl = document.getElementById("sidebarRole");
+    if (roleEl) roleEl.textContent = user.role;
 
-        const user =
-            await response.json();
-
-        document.getElementById(
-            "welcomeText"
-        ).innerHTML = `
-
-            Welcome
-            <strong>
-                ${user.full_name}
-            </strong>
-
-            (${user.role})
-
-        `;
-
-    } catch (error) {
-
-        console.error(error);
-    }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-
-// =====================================================
-// LOAD BATCHES
-// =====================================================
-
+// ── Load batches dropdown ─────────────────────────────────────
 async function loadBatches() {
+  try {
+    const res = await apiFetch("/batches/");
+    if (!res) return;
+    if (!res.ok) throw new Error(await res.text());
 
-    try {
+    const data    = await res.json();
+    const batches = data.results ?? (Array.isArray(data) ? data : []);
+    const select  = document.getElementById("batchSelect");
 
-        const response =
-            await apiFetch(
-                `${API_BASE}/batches/`
-            );
+    select.innerHTML =
+      `<option value="">— Select Batch —</option>` +
+      batches
+        .map((b) => `<option value="${esc(b.id)}">${esc(b.batch_number)} · ${esc(b.medicine_name)}</option>`)
+        .join("");
 
-        const data =
-            await response.json();
-
-        const batches =
-            data.results || data;
-
-        const select =
-            document.getElementById(
-                "batchSelect"
-            );
-
-        select.innerHTML = `
-
-            <option value="">
-                Select Batch
-            </option>
-        `;
-
-        batches.forEach(batch => {
-
-            select.innerHTML += `
-
-                <option value="${batch.id}">
-
-                    ${batch.batch_number}
-                    -
-                    ${batch.medicine_name}
-
-                </option>
-            `;
-        });
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Failed to load batches"
-        );
-    }
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to load batches", "error");
+  }
 }
 
-
-// =====================================================
-// LOAD WAREHOUSES
-// =====================================================
-
+// ── Load warehouses dropdown + KPI count ──────────────────────
 async function loadWarehouses() {
+  try {
+    const res = await apiFetch("/warehouses/");
+    if (!res) return;
+    if (!res.ok) throw new Error(await res.text());
 
-    try {
+    const data       = await res.json();
+    const warehouses = data.results ?? (Array.isArray(data) ? data : []);
+    const select     = document.getElementById("warehouseSelect");
 
-        const response =
-            await apiFetch(
-                `${API_BASE}/warehouses/`
-            );
+    select.innerHTML =
+      `<option value="">— Select Warehouse —</option>` +
+      warehouses
+        .map((w) => `<option value="${esc(w.id)}">${esc(w.name)} (${esc(w.code)})</option>`)
+        .join("");
 
-        const data =
-            await response.json();
+    document.getElementById("warehouseCount").textContent = fmt(warehouses.length);
 
-        const warehouses =
-            data.results || data;
-
-        const select =
-            document.getElementById(
-                "warehouseSelect"
-            );
-
-        select.innerHTML = `
-
-            <option value="">
-                Select Warehouse
-            </option>
-        `;
-
-        warehouses.forEach(warehouse => {
-
-            select.innerHTML += `
-
-                <option value="${warehouse.id}">
-
-                    ${warehouse.name}
-                    (${warehouse.code})
-
-                </option>
-            `;
-        });
-
-        document.getElementById(
-            "warehouseCount"
-        ).innerText =
-            warehouses.length;
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Failed to load warehouses"
-        );
-    }
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to load warehouses", "error");
+  }
 }
 
+// ── Keep a full copy of allocations for client-side filtering ─
+let _allAllocations = [];
 
-// =====================================================
-// LOAD ALLOCATIONS
-// =====================================================
+// ── Render (client-side filtered by search query) ─────────────
+function renderAllocations(query = "") {
+  const q      = query.toLowerCase();
+  const tbody  = document.getElementById("allocationTableBody");
+  const count  = document.getElementById("resultsCount");
 
+  const filtered = q
+    ? _allAllocations.filter(
+        (s) =>
+          s.warehouse_name?.toLowerCase().includes(q) ||
+          s.batch_number?.toLowerCase().includes(q) ||
+          s.medicine_name?.toLowerCase().includes(q)
+      )
+    : _allAllocations;
+
+  // Compute max quantity for relative bar scaling
+  _maxQty = Math.max(1, ...filtered.map((s) => s.quantity ?? 0));
+
+  const totalStock = filtered.reduce((sum, s) => sum + (s.quantity ?? 0), 0);
+
+  document.getElementById("allocationCount").textContent = fmt(filtered.length);
+  document.getElementById("stockCount").textContent      = fmt(totalStock);
+  count.textContent = `${filtered.length} allocation${filtered.length !== 1 ? "s" : ""}`;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="table-msg">No allocations found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((s) => {
+    const status = stockStatus(s.quantity ?? 0);
+    return `
+      <tr>
+        <td>
+          <div class="wh-name">${esc(s.warehouse_name ?? "—")}</div>
+          ${s.warehouse_code ? `<div class="wh-code">${esc(s.warehouse_code)}</div>` : ""}
+        </td>
+        <td><span class="batch-num">${esc(s.batch_number ?? "—")}</span></td>
+        <td>${esc(s.medicine_name ?? "—")}</td>
+        <td>${qtyBar(s.quantity ?? 0)}</td>
+        <td><span class="status-pill ${status.cls}">${status.label}</span></td>
+      </tr>`;
+  }).join("");
+}
+
+// ── Load allocations from API, then render ────────────────────
 async function loadAllocations() {
+  try {
+    const res = await apiFetch("/warehouse-stock/");
+    if (!res) return;
+    if (!res.ok) throw new Error(await res.text());
 
-    try {
+    const data = await res.json();
+    _allAllocations = data.results ?? (Array.isArray(data) ? data : []);
 
-        const search =
-            document.getElementById(
-                "searchInput"
-            ).value
-            .toLowerCase();
+    renderAllocations(document.getElementById("searchInput").value.trim());
 
-        const response =
-            await apiFetch(
-                `${API_BASE}/warehouse-stock/`
-            );
-
-        const data =
-            await response.json();
-
-        console.log(
-            "ALLOCATIONS:",
-            data
-        );
-
-        const allocations =
-            data.results || data;
-
-        const tbody =
-            document.getElementById(
-                "allocationTableBody"
-            );
-
-        tbody.innerHTML = "";
-
-        let totalStock = 0;
-
-        let filtered =
-            allocations.filter(stock => {
-
-                return (
-
-                    stock.warehouse_name
-                        ?.toLowerCase()
-                        .includes(search)
-
-                    ||
-
-                    stock.batch_number
-                        ?.toLowerCase()
-                        .includes(search)
-
-                    ||
-
-                    stock.medicine_name
-                        ?.toLowerCase()
-                        .includes(search)
-                );
-            });
-
-
-        document.getElementById(
-            "allocationCount"
-        ).innerText =
-            filtered.length;
-
-
-        if (filtered.length === 0) {
-
-            tbody.innerHTML = `
-
-                <tr>
-
-                    <td colspan="5"
-                        class="text-center">
-
-                        No allocations found
-
-                    </td>
-
-                </tr>
-            `;
-
-            return;
-        }
-
-
-        filtered.forEach(stock => {
-
-            totalStock +=
-                stock.quantity;
-
-            const statusBadge =
-                stock.quantity <= 10
-
-                    ? `
-                        <span class="badge bg-danger">
-                            Low Stock
-                        </span>
-                    `
-
-                    : `
-                        <span class="badge bg-success">
-                            Healthy
-                        </span>
-                    `;
-
-            tbody.innerHTML += `
-
-                <tr>
-
-                    <td>
-
-                        <strong>
-
-                            ${stock.warehouse_name}
-
-                        </strong>
-
-                    </td>
-
-                    <td>
-
-                        ${stock.batch_number}
-
-                    </td>
-
-                    <td>
-
-                        ${stock.medicine_name}
-
-                    </td>
-
-                    <td>
-
-                        ${stock.quantity}
-
-                    </td>
-
-                    <td>
-
-                        ${statusBadge}
-
-                    </td>
-
-                </tr>
-            `;
-        });
-
-        document.getElementById(
-            "stockCount"
-        ).innerText =
-            totalStock;
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Failed to load stock allocations"
-        );
-    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById("allocationTableBody").innerHTML =
+      `<tr><td colspan="5" class="table-msg" style="color:var(--danger)">Failed to load stock data</td></tr>`;
+  }
 }
 
+// ── Allocate stock ────────────────────────────────────────────
+async function allocateStock() {
+  const batch_id     = document.getElementById("batchSelect").value;
+  const warehouse_id = document.getElementById("warehouseSelect").value;
+  const quantity     = parseInt(document.getElementById("quantityInput").value, 10);
 
-// =====================================================
-// CREATE STOCK ALLOCATION
-// =====================================================
+  if (!batch_id || !warehouse_id || !quantity || quantity < 1) {
+    showToast("Please fill in all fields with valid values", "error");
+    return;
+  }
 
-document
-.getElementById("allocationForm")
-.addEventListener("submit", async (e) => {
+  // Loading state
+  const btn     = document.getElementById("allocateBtn");
+  const spin    = document.getElementById("allocSpin");
+  const icon    = document.getElementById("allocIcon");
+  const btnText = document.getElementById("allocBtnText");
 
-    e.preventDefault();
+  btn.disabled        = true;
+  spin.style.display  = "block";
+  icon.style.display  = "none";
+  btnText.textContent = "Allocating…";
 
-    try {
+  try {
+    const res = await apiFetch("/stock-allocation/", {
+      method: "POST",
+      body:   JSON.stringify({ batch_id, warehouse_id, quantity }),
+    });
+    if (!res) return;
 
-        const batch_id =
-            document.getElementById(
-                "batchSelect"
-            ).value;
+    const data = await res.json();
 
-        const warehouse_id =
-            document.getElementById(
-                "warehouseSelect"
-            ).value;
-
-        const quantity =
-            parseInt(
-                document.getElementById(
-                    "quantityInput"
-                ).value
-            );
-
-        if (
-            !batch_id ||
-            !warehouse_id ||
-            !quantity
-        ) {
-
-            alert(
-                "Please fill all fields"
-            );
-
-            return;
-        }
-
-        const payload = {
-
-            batch_id,
-
-            warehouse_id,
-
-            quantity
-        };
-
-        console.log(
-            "PAYLOAD:",
-            payload
-        );
-
-        const response =
-            await apiFetch(
-
-                `${API_BASE}/stock-allocation/`,
-
-                {
-                    method: "POST",
-
-                    body: JSON.stringify(
-                        payload
-                    )
-                }
-            );
-
-        const data =
-            await response.json();
-
-        console.log(
-            "RESPONSE:",
-            data
-        );
-
-        if (!response.ok) {
-
-            alert(
-                JSON.stringify(
-                    data,
-                    null,
-                    2
-                )
-            );
-
-            return;
-        }
-
-        alert(
-            "Stock allocated successfully"
-        );
-
-        document
-            .getElementById(
-                "allocationForm"
-            )
-            .reset();
-
-        loadAllocations();
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Allocation failed"
-        );
+    if (!res.ok) {
+      const msg = typeof data === "object"
+        ? Object.values(data).flat().join(" · ")
+        : "Allocation failed";
+      showToast(msg, "error");
+      return;
     }
-});
 
+    showToast("Stock allocated successfully", "success");
 
-// =====================================================
-// SEARCH
-// =====================================================
-
-document
-.getElementById("searchInput")
-.addEventListener("keyup", () => {
+    // Reset form fields
+    document.getElementById("batchSelect").value    = "";
+    document.getElementById("warehouseSelect").value = "";
+    document.getElementById("quantityInput").value  = "";
 
     loadAllocations();
+
+  } catch (err) {
+    console.error(err);
+    showToast("Allocation failed — please try again", "error");
+  } finally {
+    btn.disabled        = false;
+    spin.style.display  = "none";
+    icon.style.display  = "inline";
+    btnText.textContent = "Allocate";
+  }
+}
+
+// ── Debounce ──────────────────────────────────────────────────
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// ── Events ───────────────────────────────────────────────────
+
+document.getElementById("allocateBtn").addEventListener("click", allocateStock);
+
+// Client-side search — no extra API calls needed
+document.getElementById("searchInput").addEventListener(
+  "input",
+  debounce((e) => renderAllocations(e.target.value.trim()), 200)
+);
+
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  document.getElementById("searchInput").value = "";
+  loadAllocations();
 });
 
-
-// =====================================================
-// LOGOUT
-// =====================================================
-
-document
-.getElementById("logoutBtn")
-.addEventListener("click", () => {
-
-    sessionStorage.clear();
-
-    window.location.href =
-        "./login.html";
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  sessionStorage.clear();
+  window.location.href = "./login.html";
 });
 
-
-// =====================================================
-// INITIAL LOAD
-// =====================================================
-
-loadProfile();
-
-loadBatches();
-
-loadWarehouses();
-
-loadAllocations();
+// ── Init — all dropdowns and table in parallel ────────────────
+Promise.all([loadProfile(), loadBatches(), loadWarehouses(), loadAllocations()]);
