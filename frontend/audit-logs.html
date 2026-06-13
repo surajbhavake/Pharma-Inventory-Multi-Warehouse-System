@@ -1,393 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audit Logs — PharmaERP</title>
 
-    <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  <style>
+    :root {
+      --bg:#0d1117;--surface:#161b22;--surface2:#1c2230;
+      --border:rgba(255,255,255,0.07);--text:#e6edf3;--muted:#7d8590;
+      --accent:#3b82f6;--accent2:#10b981;--warning:#f59e0b;--danger:#ef4444;
+      --purple:#8b5cf6;--cyan:#06b6d4;
+      --radius:14px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--tr:0.18s ease;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-    <title>
-        Audit Logs
-    </title>
+    /* Sidebar */
+    .sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+    .sidebar-brand{padding:24px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .brand-icon{width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .brand-name{font-size:15px;font-weight:700;letter-spacing:-0.3px}.brand-ver{font-size:11px;color:var(--muted);font-family:var(--mono)}
+    .sidebar-nav{padding:16px 12px;flex:1;overflow-y:auto}
+    .nav-label{font-size:10px;font-weight:600;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;padding:8px 8px 6px;margin-top:8px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all var(--tr)}
+    .nav-item:hover{background:var(--surface2);color:var(--text)}.nav-item.active{background:rgba(59,130,246,.15);color:var(--accent)}
+    .nav-item i{font-size:16px;width:20px}
+    .sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+    .user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px}
+    .avatar{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+    .user-name{font-size:13px;font-weight:600}.user-role{font-size:11px;color:var(--muted)}
 
-    <!-- Bootstrap -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+    /* Main */
+    .main-content{margin-left:240px;flex:1;padding:32px;min-height:100vh}
+    .page-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:28px}
+    .page-title{font-size:28px;font-weight:700;letter-spacing:-0.8px}.page-sub{font-size:14px;color:var(--muted);margin-top:4px}
+    .header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 
-    <!-- Bootstrap Icons -->
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    >
+    /* Buttons */
+    .btn-erp{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--tr);font-family:var(--font)}
+    .btn-danger-erp{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.2)}.btn-danger-erp:hover{background:rgba(239,68,68,.22)}
+    .btn-ghost{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text)}
 
-    <!-- Custom CSS -->
-    <link
-        rel="stylesheet"
-        href="./css/styles.css"
-    >
+    /* KPI grid */
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+    .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;transition:transform var(--tr);animation:fadeUp .4s ease forwards;opacity:0}
+    .kpi-card:nth-child(1){animation-delay:.05s}.kpi-card:nth-child(2){animation-delay:.10s}
+    .kpi-card:nth-child(3){animation-delay:.15s}.kpi-card:nth-child(4){animation-delay:.20s}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .kpi-card:hover{transform:translateY(-2px)}
+    .kpi-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .kpi-value{font-size:28px;font-weight:700;letter-spacing:-1px;font-family:var(--mono);line-height:1}
+    .kpi-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+    .kpi-icon.blue  {background:rgba(59,130,246,.12);color:var(--accent)}
+    .kpi-icon.green {background:rgba(16,185,129,.12);color:var(--accent2)}
+    .kpi-icon.yellow{background:rgba(245,158,11,.12);color:var(--warning)}
+    .kpi-icon.red   {background:rgba(239,68,68,.12);color:var(--danger)}
 
+    /* Card */
+    .card-erp{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+
+    /* Toolbar */
+    .toolbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .search-wrap{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:0 12px;flex:1;min-width:180px;transition:border-color var(--tr)}
+    .search-wrap:focus-within{border-color:var(--accent)}
+    .search-wrap i{color:var(--muted);font-size:15px;flex-shrink:0}
+    .search-input{background:transparent;border:none;color:var(--text);font-size:14px;padding:9px 0;font-family:var(--font);outline:none;width:100%}
+    .search-input::placeholder{color:var(--muted)}
+    .filter-select,.filter-input{background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;padding:9px 14px;font-family:var(--font);outline:none;transition:border-color var(--tr)}
+    .filter-select{cursor:pointer}.filter-select:focus,.filter-input:focus{border-color:var(--accent)}
+    .filter-select option{background:var(--surface2)}
+    .filter-input::placeholder{color:var(--muted)}
+    .results-count{padding:10px 20px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);font-family:var(--mono);display:flex;align-items:center;justify-content:space-between}
+    .active-filters{display:flex;gap:6px;flex-wrap:wrap}
+    .filter-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:rgba(59,130,246,.12);color:var(--accent);border-radius:50px;font-size:11px;font-weight:600;font-family:var(--mono)}
+    .filter-chip button{background:none;border:none;color:inherit;cursor:pointer;padding:0;line-height:1;font-size:12px;opacity:.7}
+    .filter-chip button:hover{opacity:1}
+
+    /* Table */
+    .audit-table{width:100%;border-collapse:collapse;font-size:13px}
+    .audit-table th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+    .audit-table td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+    .audit-table tbody tr:last-child td{border-bottom:none}
+    .audit-table tbody tr{transition:background var(--tr)}.audit-table tbody tr:hover{background:rgba(255,255,255,.03)}
+
+    /* Action badges */
+    .action-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;font-family:var(--mono);letter-spacing:.5px}
+    .badge-create {background:rgba(16,185,129,.15);color:var(--accent2)}
+    .badge-update {background:rgba(245,158,11,.15);color:var(--warning)}
+    .badge-delete {background:rgba(239,68,68,.15);color:var(--danger)}
+    .badge-login  {background:rgba(59,130,246,.15);color:var(--accent)}
+    .badge-logout {background:rgba(139,92,246,.15);color:var(--purple)}
+    .badge-other  {background:rgba(255,255,255,.07);color:var(--muted)}
+
+    /* Entity chip */
+    .entity-chip{font-family:var(--mono);font-size:11px;background:rgba(6,182,212,.1);color:var(--cyan);padding:2px 7px;border-radius:4px;display:inline-block}
+    .entity-id{font-family:var(--mono);font-size:11px;color:var(--muted)}
+    .desc-cell{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--muted)}
+    .user-cell{font-size:12px;display:flex;align-items:center;gap:6px}
+    .user-dot{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+    .ts{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+    .table-msg{text-align:center;padding:40px 0;color:var(--muted);font-size:14px}
+    .skeleton{background:linear-gradient(90deg,var(--surface2) 25%,rgba(255,255,255,.04) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:13px;display:inline-block}
+    @keyframes shimmer{to{background-position:-200% 0}}
+
+    /* Pagination */
+    .pagination-bar{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    .page-info{font-size:12px;color:var(--muted);font-family:var(--mono)}
+    .page-btns{display:flex;gap:6px}
+    .page-btn{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
+    .page-btn:hover:not(:disabled){background:var(--surface);color:var(--text)}
+    .page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .page-btn:disabled{opacity:.3;cursor:not-allowed}
+
+    /* Toast */
+    .toast-erp{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:9999;pointer-events:none}
+    .toast-erp.show{transform:translateY(0);opacity:1}
+    .toast-erp.success{border-left:3px solid var(--accent2)}.toast-erp.error{border-left:3px solid var(--danger)}
+
+    @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main-content{margin-left:0;padding:20px}.kpi-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:480px){.kpi-grid{grid-template-columns:1fr}.toolbar{flex-direction:column;align-items:stretch}}
+  </style>
 </head>
+<body>
 
-<body class="bg-light">
-
-
-<!-- ===================================================== -->
 <!-- SIDEBAR -->
-<!-- ===================================================== -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">💊</div>
+    <div><div class="brand-name">PharmaERP</div><div class="brand-ver">v1.0.0</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <a href="./dashboard.html"    class="nav-item"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+    <div class="nav-label">Inventory</div>
+    <a href="./medicines.html"       class="nav-item"><i class="bi bi-capsule-pill"></i> Medicines</a>
+    <a href="./batches.html"         class="nav-item"><i class="bi bi-box-seam"></i> Batches</a>
+    <a href="./warehouses.html"      class="nav-item"><i class="bi bi-buildings"></i> Warehouses</a>
+    <a href="./stock-allocation.html" class="nav-item"><i class="bi bi-stack"></i> Stock</a>
+    <div class="nav-label">Compliance</div>
+    <a href="./recalls.html"         class="nav-item"><i class="bi bi-exclamation-triangle"></i> Recalls</a>
+    <a href="./audit-logs.html"      class="nav-item active"><i class="bi bi-journal-text"></i> Audit Logs</a>
+     <div class="nav-label">Transfers</div>
+    <a href="./stock-transfer.html"  class="nav-item"><i class="bi bi-arrow-left-right"></i> Stock Transfer</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="avatar" id="sidebarAvatar">?</div>
+      <div><div class="user-name" id="sidebarName">Loading…</div><div class="user-role" id="sidebarRole">—</div></div>
+    </div>
+  </div>
+</aside>
 
-<div id="sidebar-container"></div>
+<!-- MAIN -->
+<main class="main-content">
 
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Audit Logs</h1>
+      <p class="page-sub" id="welcomeText">Monitor system activity &amp; compliance</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-erp btn-ghost" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+      <button class="btn-erp btn-danger-erp" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</button>
+    </div>
+  </div>
 
-<!-- ===================================================== -->
-<!-- MAIN CONTENT -->
-<!-- ===================================================== -->
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div><div class="kpi-label">Total Logs</div><div class="kpi-value" id="totalLogs">—</div></div>
+      <div class="kpi-icon blue"><i class="bi bi-journal-text"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Create</div><div class="kpi-value" id="createLogs" style="color:var(--accent2)">—</div></div>
+      <div class="kpi-icon green"><i class="bi bi-plus-circle"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Update</div><div class="kpi-value" id="updateLogs" style="color:var(--warning)">—</div></div>
+      <div class="kpi-icon yellow"><i class="bi bi-pencil"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Delete</div><div class="kpi-value" id="deleteLogs" style="color:var(--danger)">—</div></div>
+      <div class="kpi-icon red"><i class="bi bi-trash3"></i></div>
+    </div>
+  </div>
 
-<div class="main-content p-4">
+  <!-- Table card -->
+  <div class="card-erp">
 
-
-    <!-- HEADER -->
-
-    <div
-        class="d-flex justify-content-between align-items-center mb-4"
-    >
-
-        <div>
-
-            <h1 class="fw-bold">
-                Audit Logs
-            </h1>
-
-            <p
-                class="text-muted mb-0"
-                id="welcomeText"
-            >
-                Monitor system activity & compliance
-            </p>
-
-        </div>
-
-        <div class="d-flex gap-2">
-
-            <button
-                class="btn btn-dark"
-                onclick="loadAuditLogs()"
-            >
-
-                <i class="bi bi-arrow-clockwise"></i>
-
-                Refresh
-
-            </button>
-
-            <button
-                id="logoutBtn"
-                class="btn btn-danger"
-            >
-
-                Logout
-
-            </button>
-
-        </div>
-
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search user, entity or description…" autocomplete="off" />
+      </div>
+      <select id="actionFilter" class="filter-select">
+        <option value="">All Actions</option>
+        <option value="CREATE">CREATE</option>
+        <option value="UPDATE">UPDATE</option>
+        <option value="DELETE">DELETE</option>
+        <option value="LOGIN">LOGIN</option>
+        <option value="LOGOUT">LOGOUT</option>
+      </select>
+      <input type="text" id="entityFilter" class="filter-input" placeholder="Entity type…" autocomplete="off" style="width:140px" />
     </div>
 
-
-    <!-- ===================================================== -->
-    <!-- STATS -->
-    <!-- ===================================================== -->
-
-    <div class="row g-4 mb-4">
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Total Logs
-                    </h6>
-
-                    <h2 id="totalLogs">
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Create Actions
-                    </h6>
-
-                    <h2
-                        id="createLogs"
-                        class="text-success"
-                    >
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Update Actions
-                    </h6>
-
-                    <h2
-                        id="updateLogs"
-                        class="text-warning"
-                    >
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Delete Actions
-                    </h6>
-
-                    <h2
-                        id="deleteLogs"
-                        class="text-danger"
-                    >
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <!-- Results + active filter chips -->
+    <div class="results-count">
+      <span id="resultsCount">Loading…</span>
+      <div class="active-filters" id="activeFilters"></div>
     </div>
 
-
-    <!-- ===================================================== -->
-    <!-- FILTERS -->
-    <!-- ===================================================== -->
-
-    <div class="card border-0 shadow-sm mb-4">
-
-        <div class="card-body">
-
-            <div class="row g-3">
-
-                <!-- SEARCH -->
-
-                <div class="col-md-4">
-
-                    <input
-                        type="text"
-                        id="searchInput"
-                        class="form-control"
-                        placeholder="Search audit logs..."
-                    >
-
-                </div>
-
-
-                <!-- ACTION FILTER -->
-
-                <div class="col-md-3">
-
-                    <select
-                        id="actionFilter"
-                        class="form-select"
-                    >
-
-                        <option value="">
-                            All Actions
-                        </option>
-
-                        <option value="CREATE">
-                            CREATE
-                        </option>
-
-                        <option value="UPDATE">
-                            UPDATE
-                        </option>
-
-                        <option value="DELETE">
-                            DELETE
-                        </option>
-
-                        <option value="LOGIN">
-                            LOGIN
-                        </option>
-
-                        <option value="LOGOUT">
-                            LOGOUT
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- ENTITY FILTER -->
-
-                <div class="col-md-3">
-
-                    <input
-                        type="text"
-                        id="entityFilter"
-                        class="form-control"
-                        placeholder="Entity Type..."
-                    >
-
-                </div>
-
-
-                <!-- REFRESH -->
-
-                <div class="col-md-2">
-
-                    <button
-                        class="btn btn-primary w-100"
-                        onclick="loadAuditLogs()"
-                    >
-
-                        Apply
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <!-- Table -->
+    <div style="overflow-x:auto;">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>User</th>
+            <th>Entity</th>
+            <th>Entity ID</th>
+            <th>Description</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="auditTableBody">
+          <tr><td colspan="6" class="table-msg"><span class="skeleton" style="width:240px"></span></td></tr>
+        </tbody>
+      </table>
     </div>
 
-
-    <!-- ===================================================== -->
-    <!-- AUDIT TABLE -->
-    <!-- ===================================================== -->
-
-    <div class="card border-0 shadow-sm">
-
-        <div class="card-body">
-
-            <div
-                class="d-flex justify-content-between align-items-center mb-4"
-            >
-
-                <h4>
-
-                    System Audit Logs
-
-                </h4>
-
-            </div>
-
-            <div class="table-responsive">
-
-                <table class="table table-hover align-middle">
-
-                    <thead class="table-dark">
-
-                        <tr>
-
-                            <th>Action</th>
-
-                            <th>User</th>
-
-                            <th>Entity Type</th>
-
-                            <th>Entity ID</th>
-
-                            <th>Description</th>
-
-                            <th>Date</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody id="auditTableBody">
-
-                        <tr>
-
-                            <td colspan="6" class="text-center">
-
-                                Loading audit logs...
-
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
+    <!-- Pagination -->
+    <div class="pagination-bar" id="paginationBar" style="display:none">
+      <span class="page-info" id="pageInfo"></span>
+      <div class="page-btns" id="pageBtns"></div>
     </div>
 
-</div>
+  </div>
 
+</main>
 
-<!-- ===================================================== -->
-<!-- BOOTSTRAP -->
-<!-- ===================================================== -->
+<!-- TOAST -->
+<div class="toast-erp" id="toast"><i id="toastIcon"></i><span id="toastMsg"></span></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
-<!-- ===================================================== -->
-<!-- SIDEBAR -->
-<!-- ===================================================== -->
-
-<script
-    type="module"
-    src="./js/sidebar.js"
-></script>
-
-
-<!-- ===================================================== -->
-<!-- AUDIT JS -->
-<!-- ===================================================== -->
-
-<script
-    src="./js/audit-logs.js"
-></script>
-
+<script type="module" src="./js/sidebar.js"></script>
+<script src="./js/audit-logs.js"></script>
 </body>
 </html>

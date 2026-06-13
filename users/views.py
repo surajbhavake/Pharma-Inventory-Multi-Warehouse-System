@@ -303,28 +303,38 @@ class PasswordChangeView(APIView):
         )
 
 
-class UserListView(generics.ListAPIView):
+class UserListView(generics.ListCreateAPIView):
     """
-    List all users (admin only).
-    
-    GET /api/v1/users/
+    List all users and create users.
     """
-    
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+
+    queryset = User.objects.all().order_by("-date_joined")
+
     permission_classes = [IsAdmin]
-    
+
+    def get_serializer_class(self):
+
+        if self.request.method == "POST":
+            return UserRegistrationSerializer
+
+        return UserSerializer
+
     @extend_schema(
         summary="List all users",
-        description="Get a list of all users (admin only).",
         responses={200: UserSerializer(many=True)},
-        tags=['Users']
+        tags=["Users"]
     )
     def get(self, request, *args, **kwargs):
-        # TODO: Add permission check for admin role
-        # For now, any authenticated user can list
         return super().get(request, *args, **kwargs)
 
+    @extend_schema(
+        summary="Create User",
+        request=UserRegistrationSerializer,
+        responses={201: UserSerializer},
+        tags=["Users"]
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
 class UserDetailView(generics.RetrieveAPIView):
     """

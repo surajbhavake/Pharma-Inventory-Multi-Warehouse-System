@@ -1,115 +1,97 @@
-<div
-    class="bg-dark text-white vh-100 p-3 position-fixed"
-    style="width: 250px;"
->
+<aside class="erp-sidebar" id="erpSidebar">
 
-    <h2 class="fw-bold mb-4">
-        Pharma ERP
-    </h2>
-
-    <ul class="nav flex-column">
-
-        <li class="nav-item mb-2">
-            <a
-                href="./dashboard.html"
-                class="nav-link text-white sidebar-link"
-                data-page="dashboard"
-            >
-                Dashboard
-            </a>
-        </li>
-
-        <!-- <li class="nav-item mb-2 admin-only">
-            <a
-                href="./users.html"
-                class="nav-link text-white sidebar-link"
-                data-page="users"
-            >
-                Users
-            </a>
-        </li> -->
-
-        <li class="nav-item mb-2">
-            <a
-                href="./medicines.html"
-                class="nav-link text-white sidebar-link"
-                data-page="medicines"
-            >
-                Medicines
-            </a>
-        </li>
-
-        <li class="nav-item mb-2">
-            <a
-                href="./batches.html"
-                class="nav-link text-white sidebar-link"
-                data-page="batches"
-            >
-                Batches
-            </a>
-        </li>
-
-        <li class="nav-item mb-2">
-            <a
-                href="./warehouses.html"
-                class="nav-link text-white sidebar-link"
-                data-page="warehouses"
-            >
-                Warehouses
-            </a>
-        </li>
-
-        <li class="nav-item mb-2">
-            <a
-                href="./stock-allocation.html"
-                class="nav-link text-white sidebar-link"
-                data-page="allocation"
-            >
-                Stock Allocation
-            </a>
-        </li>
-
-        <li class="nav-item mb-2">
-            <a
-                href="./stock-transfer.html"
-                class="nav-link text-white sidebar-link"
-                data-page="transfer"
-            >
-                Stock Transfer
-            </a>
-        </li>
-
-        <li class="nav-item mb-2">
-            <a
-                href="./recalls.html"
-                class="nav-link text-white sidebar-link"
-                data-page="recalls"
-            >
-                Recalls
-            </a>
-        </li>
-
-        <li class="nav-item mb-2">
-            <a
-                href="./audit-logs.html"
-                class="nav-link text-white sidebar-link"
-                data-page="audit"
-            >
-                Audit Logs
-            </a>
-        </li>
-
-    </ul>
-
-    <div class="mt-5">
-
-        <button
-            id="logoutBtn"
-            class="btn btn-danger w-100"
-        >
-            Logout
-        </button>
-
+  <!-- Brand -->
+  <div class="sb-brand">
+    <div class="sb-brand-icon">💊</div>
+    <div class="sb-brand-text">
+      <span class="sb-brand-name">PharmaERP</span>
+      <span class="sb-brand-ver">v1.0.0</span>
     </div>
+  </div>
 
-</div>
+  <!-- Nav -->
+  <nav class="sb-nav">
+
+    <div class="sb-section-label">Overview</div>
+    <a href="./dashboard.html"        class="sb-link" data-page="dashboard">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 1116 0A8 8 0 012 10zm5-1h2V7H7v2zm0 4h2v-2H7v2zm4-4h2V7h-2v2zm0 4h2v-2h-2v2z"/></svg>
+      </span>
+      <span class="sb-label">Dashboard</span>
+    </a>
+
+    <div class="sb-section-label">Inventory</div>
+    <a href="./medicines.html"        class="sb-link" data-page="medicines">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+      </span>
+      <span class="sb-label">Medicines</span>
+    </a>
+    <a href="./batches.html"          class="sb-link" data-page="batches">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/><path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+      </span>
+      <span class="sb-label">Batches</span>
+    </a>
+    <a href="./warehouses.html"       class="sb-link" data-page="warehouses">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+      </span>
+      <span class="sb-label">Warehouses</span>
+    </a>
+
+    <div class="sb-section-label">Stock</div>
+    <a href="./stock-allocation.html" class="sb-link" data-page="allocation">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"/></svg>
+      </span>
+      <span class="sb-label">Stock Allocation</span>
+    </a>
+    <a href="./stock-transfer.html"   class="sb-link" data-page="transfer">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"/></svg>
+      </span>
+      <span class="sb-label">Stock Transfer</span>
+    </a>
+
+    <div class="sb-section-label">Compliance</div>
+    <a href="./recalls.html"          class="sb-link" data-page="recalls">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      </span>
+      <span class="sb-label">Recalls</span>
+      <span class="sb-badge" id="recallBadge" style="display:none"></span>
+    </a>
+    <a href="./audit-logs.html"       class="sb-link" data-page="audit">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+      </span>
+      <span class="sb-label">Audit Logs</span>
+    </a>
+
+    <!-- Admin only -->
+    <div class="sb-section-label admin-only" style="display:none">Admin</div>
+    <a href="./users.html" class="sb-link admin-only" data-page="users" style="display:none">
+      <span class="sb-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+      </span>
+      <span class="sb-label">Users</span>
+    </a>
+
+  </nav>
+
+  <!-- Footer: User -->
+  <div class="sb-footer">
+    <div class="sb-user" id="sbUser">
+      <div class="sb-avatar" id="sbAvatar">?</div>
+      <div class="sb-user-info">
+        <div class="sb-user-name" id="sbName">Loading…</div>
+        <div class="sb-user-role" id="sbRole">—</div>
+      </div>
+    </div>
+    <button class="sb-logout" id="logoutBtn" title="Logout">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/></svg>
+    </button>
+  </div>
+
+</aside>

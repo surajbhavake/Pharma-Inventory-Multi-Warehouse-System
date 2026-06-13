@@ -1,431 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recall Management — PharmaERP</title>
 
-    <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  <style>
+    :root {
+      --bg:#0d1117;--surface:#161b22;--surface2:#1c2230;
+      --border:rgba(255,255,255,0.07);--text:#e6edf3;--muted:#7d8590;
+      --accent:#3b82f6;--accent2:#10b981;--warning:#f59e0b;--danger:#ef4444;
+      --purple:#8b5cf6;--cyan:#06b6d4;
+      --radius:14px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--tr:0.18s ease;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-    <title>
-        Recall Management ERP
-    </title>
+    /* Sidebar */
+    .sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+    .sidebar-brand{padding:24px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .brand-icon{width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .brand-name{font-size:15px;font-weight:700;letter-spacing:-0.3px}.brand-ver{font-size:11px;color:var(--muted);font-family:var(--mono)}
+    .sidebar-nav{padding:16px 12px;flex:1;overflow-y:auto}
+    .nav-label{font-size:10px;font-weight:600;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;padding:8px 8px 6px;margin-top:8px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all var(--tr)}
+    .nav-item:hover{background:var(--surface2);color:var(--text)}.nav-item.active{background:rgba(59,130,246,.15);color:var(--accent)}
+    .nav-item i{font-size:16px;width:20px}
+    .sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+    .user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px}
+    .avatar{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+    .user-name{font-size:13px;font-weight:600}.user-role{font-size:11px;color:var(--muted)}
 
-    <!-- Bootstrap -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+    /* Main */
+    .main-content{margin-left:240px;flex:1;padding:32px;min-height:100vh}
+    .page-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:28px}
+    .page-title{font-size:28px;font-weight:700;letter-spacing:-0.8px}.page-sub{font-size:14px;color:var(--muted);margin-top:4px}
+    .header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 
-    <!-- Bootstrap Icons -->
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    >
+    /* Buttons */
+    .btn-erp{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--tr);font-family:var(--font)}
+    .btn-primary-erp{background:var(--accent);color:#fff}.btn-primary-erp:hover{background:#2563eb}
+    .btn-danger-erp{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.2)}.btn-danger-erp:hover{background:rgba(239,68,68,.22)}
+    .btn-ghost{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text)}
+    .btn-recall{background:linear-gradient(135deg,var(--danger),#b91c1c);color:#fff}.btn-recall:hover{opacity:.9}
 
-    <!-- Custom CSS -->
-    <link
-        rel="stylesheet"
-        href="./css/styles.css"
-    >
+    /* KPI grid */
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+    .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;transition:transform var(--tr);animation:fadeUp .4s ease forwards;opacity:0}
+    .kpi-card:nth-child(1){animation-delay:.05s}.kpi-card:nth-child(2){animation-delay:.10s}
+    .kpi-card:nth-child(3){animation-delay:.15s}.kpi-card:nth-child(4){animation-delay:.20s}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .kpi-card:hover{transform:translateY(-2px)}
+    .kpi-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .kpi-value{font-size:28px;font-weight:700;letter-spacing:-1px;font-family:var(--mono);line-height:1}
+    .kpi-value.warning{color:var(--warning)}.kpi-value.success{color:var(--accent2)}.kpi-value.danger{color:var(--danger)}
+    .kpi-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+    .kpi-icon.blue{background:rgba(59,130,246,.12);color:var(--accent)}
+    .kpi-icon.yellow{background:rgba(245,158,11,.12);color:var(--warning)}
+    .kpi-icon.green{background:rgba(16,185,129,.12);color:var(--accent2)}
+    .kpi-icon.red{background:rgba(239,68,68,.12);color:var(--danger)}
 
+    /* Pending alert banner */
+    .pending-banner{display:none;align-items:center;gap:10px;padding:12px 18px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;margin-bottom:20px;font-size:13px;font-weight:500;color:var(--warning)}
+    .pending-banner.show{display:flex}
+    .pending-banner i{font-size:18px;flex-shrink:0}
+
+    /* Card */
+    .card-erp{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+
+    /* Toolbar */
+    .toolbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .search-wrap{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:0 12px;flex:1;min-width:180px;transition:border-color var(--tr)}
+    .search-wrap:focus-within{border-color:var(--accent)}
+    .search-wrap i{color:var(--muted);font-size:15px;flex-shrink:0}
+    .search-input{background:transparent;border:none;color:var(--text);font-size:14px;padding:9px 0;font-family:var(--font);outline:none;width:100%}
+    .search-input::placeholder{color:var(--muted)}
+    .filter-select{background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;padding:9px 14px;font-family:var(--font);outline:none;cursor:pointer;transition:border-color var(--tr)}
+    .filter-select:focus{border-color:var(--accent)}
+    .filter-select option{background:var(--surface2)}
+    .results-count{padding:10px 20px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);font-family:var(--mono)}
+
+    /* Table */
+    .recall-table{width:100%;border-collapse:collapse;font-size:13px}
+    .recall-table th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+    .recall-table td{padding:13px 16px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+    .recall-table tbody tr:last-child td{border-bottom:none}
+    .recall-table tbody tr{transition:background var(--tr)}.recall-table tbody tr:hover{background:rgba(255,255,255,.03)}
+
+    .batch-chip{font-family:var(--mono);font-size:12px;background:rgba(59,130,246,.1);color:var(--accent);padding:3px 8px;border-radius:5px;display:inline-block}
+    .reason-cell{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px}
+    .ts{font-family:var(--mono);font-size:11px;color:var(--muted)}
+    .user-cell{font-size:12px;color:var(--muted)}
+
+    /* Status pills */
+    .status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:50px;font-size:11px;font-weight:600}
+    .status-pending {background:rgba(245,158,11,.12);color:var(--warning)}
+    .status-approved{background:rgba(16,185,129,.12);color:var(--accent2)}
+    .status-rejected{background:rgba(239,68,68,.12);color:var(--danger)}
+
+    /* Action buttons */
+    .action-btn{width:30px;height:30px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--tr);font-size:13px}
+    .action-btn.approve{background:rgba(16,185,129,.12);color:var(--accent2)}.action-btn.approve:hover{background:rgba(16,185,129,.25)}
+    .action-btn.reject {background:rgba(239,68,68,.12);color:var(--danger)}.action-btn.reject:hover{background:rgba(239,68,68,.25)}
+    .actions-cell{display:flex;gap:6px}
+    .completed-label{font-size:11px;color:var(--muted);font-style:italic}
+
+    .table-msg{text-align:center;padding:40px 0;color:var(--muted);font-size:14px}
+    .skeleton{background:linear-gradient(90deg,var(--surface2) 25%,rgba(255,255,255,.04) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:13px;display:inline-block}
+    @keyframes shimmer{to{background-position:-200% 0}}
+
+    /* Modal */
+    .modal-erp .modal-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)}
+    .modal-erp .modal-header{padding:20px 24px;border-bottom:1px solid var(--border);background:var(--surface2)}
+    .modal-erp .modal-title{font-size:16px;font-weight:700;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px}
+    .modal-erp .btn-close{filter:invert(1) brightness(.7)}.modal-erp .btn-close:hover{filter:invert(1) brightness(1)}
+    .modal-erp .modal-body{padding:24px}
+    .form-label-erp{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .form-control-erp,.form-select-erp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;padding:9px 14px;font-family:var(--font);outline:none;transition:border-color var(--tr)}
+    .form-control-erp::placeholder{color:var(--muted)}
+    .form-control-erp:focus,.form-select-erp:focus{border-color:var(--accent);box-shadow:none}
+    .form-select-erp option{background:var(--surface2);color:var(--text)}
+    textarea.form-control-erp{resize:vertical;min-height:100px}
+    .modal-footer-erp{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+    .btn-save{background:var(--danger);color:#fff;padding:9px 22px;border-radius:9px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background var(--tr);display:flex;align-items:center;gap:7px}
+    .btn-save:hover{background:#b91c1c}.btn-save:disabled{opacity:.6;cursor:not-allowed}
+    .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Confirm dialog */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9998;backdrop-filter:blur(4px)}
+    .confirm-overlay.show{display:flex}
+    .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:380px;width:90%;text-align:center}
+    .confirm-icon{font-size:36px;margin-bottom:12px}.confirm-title{font-size:16px;font-weight:700;margin-bottom:8px}
+    .confirm-msg{font-size:13px;color:var(--muted);margin-bottom:24px}.confirm-btns{display:flex;gap:10px;justify-content:center}
+    .btn-confirm-cancel{padding:8px 20px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+    .btn-confirm-approve{padding:8px 20px;background:var(--accent2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+    .btn-confirm-reject{padding:8px 20px;background:var(--danger);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+
+    /* Toast */
+    .toast-erp{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:9999;pointer-events:none}
+    .toast-erp.show{transform:translateY(0);opacity:1}
+    .toast-erp.success{border-left:3px solid var(--accent2)}.toast-erp.error{border-left:3px solid var(--danger)}
+    .toast-erp.warning{border-left:3px solid var(--warning)}
+
+    @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main-content{margin-left:0;padding:20px}.kpi-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:480px){.kpi-grid{grid-template-columns:1fr}}
+  </style>
 </head>
+<body>
 
-<body class="bg-light">
-
-
-<!-- ===================================================== -->
 <!-- SIDEBAR -->
-<!-- ===================================================== -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">💊</div>
+    <div><div class="brand-name">PharmaERP</div><div class="brand-ver">v1.0.0</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <a href="./dashboard.html"    class="nav-item"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+    <div class="nav-label">Inventory</div>
+    <a href="./medicines.html"       class="nav-item"><i class="bi bi-capsule-pill"></i> Medicines</a>
+    <a href="./batches.html"         class="nav-item"><i class="bi bi-box-seam"></i> Batches</a>
+    <a href="./warehouses.html"      class="nav-item"><i class="bi bi-buildings"></i> Warehouses</a>
+    <a href="./stock-allocation.html" class="nav-item"><i class="bi bi-stack"></i> Stock</a>
+    <div class="nav-label">Compliance</div>
+    <a href="./recalls.html"         class="nav-item active"><i class="bi bi-exclamation-triangle"></i> Recalls</a>
+    <a href="./audit-logs.html"      class="nav-item"><i class="bi bi-journal-text"></i> Audit Logs</a>
+     <div class="nav-label">Transfers</div>
+    <a href="./stock-transfer.html"  class="nav-item"><i class="bi bi-arrow-left-right"></i> Stock Transfer</a>
+  </nav>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="avatar" id="sidebarAvatar">?</div>
+      <div><div class="user-name" id="sidebarName">Loading…</div><div class="user-role" id="sidebarRole">—</div></div>
+    </div>
+  </div>
+</aside>
 
-<div id="sidebar-container"></div>
+<!-- MAIN -->
+<main class="main-content">
 
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Recall Management</h1>
+      <p class="page-sub" id="welcomeText">Manage pharmaceutical recalls</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-erp btn-recall" id="createRecallBtn">
+        <i class="bi bi-exclamation-triangle"></i> Create Recall
+      </button>
+      <button class="btn-erp btn-danger-erp" id="logoutBtn">
+        <i class="bi bi-box-arrow-right"></i> Logout
+      </button>
+    </div>
+  </div>
 
-<!-- ===================================================== -->
-<!-- MAIN CONTENT -->
-<!-- ===================================================== -->
+  <!-- Pending alert banner -->
+  <div class="pending-banner" id="pendingBanner">
+    <i class="bi bi-exclamation-circle-fill"></i>
+    <span id="pendingBannerText">You have pending recall requests awaiting review.</span>
+  </div>
 
-<div class="main-content p-4">
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div><div class="kpi-label">Total Recalls</div><div class="kpi-value" id="totalRecallCount">—</div></div>
+      <div class="kpi-icon blue"><i class="bi bi-list-check"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Pending</div><div class="kpi-value warning" id="pendingRecallCount">—</div></div>
+      <div class="kpi-icon yellow"><i class="bi bi-hourglass-split"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Approved</div><div class="kpi-value success" id="approvedRecallCount">—</div></div>
+      <div class="kpi-icon green"><i class="bi bi-check-circle"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Rejected</div><div class="kpi-value danger" id="rejectedRecallCount">—</div></div>
+      <div class="kpi-icon red"><i class="bi bi-x-circle"></i></div>
+    </div>
+  </div>
 
-
-    <!-- HEADER -->
-
-    <div
-        class="d-flex justify-content-between align-items-center mb-4"
-    >
-
-        <div>
-
-            <h1 class="fw-bold">
-                Recall Management
-            </h1>
-
-            <p
-                class="text-muted mb-0"
-                id="welcomeText"
-            >
-                Manage pharmaceutical recalls
-            </p>
-
-        </div>
-
-        <div class="d-flex gap-2">
-
-            <button
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#recallModal"
-            >
-
-                <i class="bi bi-exclamation-triangle"></i>
-
-                Create Recall
-
-            </button>
-
-            <button
-                id="logoutBtn"
-                class="btn btn-danger"
-            >
-
-                Logout
-
-            </button>
-
-        </div>
-
+  <!-- Table card -->
+  <div class="card-erp">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search batch, medicine or reason…" autocomplete="off" />
+      </div>
+      <select id="statusFilter" class="filter-select">
+        <option value="">All Statuses</option>
+        <option value="PENDING">Pending</option>
+        <option value="APPROVED">Approved</option>
+        <option value="REJECTED">Rejected</option>
+      </select>
+      <button class="btn-erp btn-ghost" id="refreshBtn" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
     </div>
 
+    <div class="results-count" id="resultsCount">Loading…</div>
 
-    <!-- ===================================================== -->
-    <!-- STATS -->
-    <!-- ===================================================== -->
-
-    <div class="row g-4 mb-4">
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Total Recalls
-                    </h6>
-
-                    <h2 id="totalRecallCount">
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Pending
-                    </h6>
-
-                    <h2
-                        id="pendingRecallCount"
-                        class="text-warning"
-                    >
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Approved
-                    </h6>
-
-                    <h2
-                        id="approvedRecallCount"
-                        class="text-success"
-                    >
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Rejected
-                    </h6>
-
-                    <h2
-                        id="rejectedRecallCount"
-                        class="text-danger"
-                    >
-                        0
-                    </h2>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <div style="overflow-x:auto;">
+      <table class="recall-table">
+        <thead>
+          <tr>
+            <th>Batch</th>
+            <th>Medicine</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Requested By</th>
+            <th>Date</th>
+            <th style="width:100px;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="recallTableBody">
+          <tr><td colspan="7" class="table-msg"><span class="skeleton" style="width:220px"></span></td></tr>
+        </tbody>
+      </table>
     </div>
+  </div>
 
+</main>
 
-    <!-- ===================================================== -->
-    <!-- SEARCH -->
-    <!-- ===================================================== -->
-
-    <div class="card border-0 shadow-sm mb-4">
-
-        <div class="card-body">
-
-            <div class="row g-3">
-
-                <div class="col-md-8">
-
-                    <input
-                        type="text"
-                        id="searchInput"
-                        class="form-control"
-                        placeholder="Search recalls..."
-                    >
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <button
-                        class="btn btn-dark w-100"
-                        onclick="loadRecalls()"
-                    >
-
-                        Refresh
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- ===================================================== -->
-    <!-- TABLE -->
-    <!-- ===================================================== -->
-
-    <div class="card border-0 shadow-sm">
-
-        <div class="card-body">
-
-            <div
-                class="d-flex justify-content-between align-items-center mb-4"
-            >
-
-                <h4>
-
-                    Recall Requests
-
-                </h4>
-
-            </div>
-
-            <div class="table-responsive">
-
-                <table class="table table-hover align-middle">
-
-                    <thead class="table-dark">
-
-                        <tr>
-
-                            <th>Batch</th>
-
-                            <th>Medicine</th>
-
-                            <th>Reason</th>
-
-                            <th>Status</th>
-
-                            <th>Requested By</th>
-
-                            <th>Date</th>
-
-                            <th>Action</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody id="recallTableBody">
-
-                        <tr>
-
-                            <td colspan="7" class="text-center">
-
-                                Loading recalls...
-
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- ===================================================== -->
 <!-- CREATE RECALL MODAL -->
-<!-- ===================================================== -->
-
-<div
-    class="modal fade"
-    id="recallModal"
-    tabindex="-1"
->
-
-    <div class="modal-dialog">
-
-        <div class="modal-content border-0 shadow">
-
-            <div class="modal-header">
-
-                <h5 class="modal-title">
-
-                    Create Recall Request
-
-                </h5>
-
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                ></button>
-
-            </div>
-
-            <div class="modal-body">
-
-                <form id="recallForm">
-
-                    <!-- BATCH -->
-
-                    <div class="mb-3">
-
-                        <label class="form-label">
-
-                            Batch
-
-                        </label>
-
-                        <select
-                            id="batchSelect"
-                            class="form-select"
-                            required
-                        >
-
-                            <option value="">
-                                Select Batch
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    <!-- REASON -->
-
-                    <div class="mb-3">
-
-                        <label class="form-label">
-
-                            Recall Reason
-
-                        </label>
-
-                        <textarea
-                            id="reason"
-                            class="form-control"
-                            rows="4"
-                            placeholder="Enter recall reason..."
-                            required
-                        ></textarea>
-
-                    </div>
-
-
-                    <button
-                        type="submit"
-                        class="btn btn-success w-100"
-                    >
-
-                        <i class="bi bi-send"></i>
-
-                        Submit Recall
-
-                    </button>
-
-                </form>
-
-            </div>
-
+<div class="modal fade modal-erp" id="recallModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger"></i> Create Recall Request</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-4">
+          <label class="form-label-erp">Batch *</label>
+          <select id="batchSelect" class="form-select-erp" required>
+            <option value="">— Select Batch —</option>
+          </select>
         </div>
-
+        <div>
+          <label class="form-label-erp">Recall Reason *</label>
+          <textarea id="reason" class="form-control-erp" rows="4" placeholder="Describe the safety concern or defect…" required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer-erp">
+        <button class="btn-erp btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn-save" id="saveBtn">
+          <div class="spin" id="saveSpin"></div>
+          <i class="bi bi-send" id="saveIcon"></i>
+          <span id="saveBtnText">Submit Recall</span>
+        </button>
+      </div>
     </div>
-
+  </div>
 </div>
 
+<!-- CONFIRM DIALOG (reused for approve & reject) -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Confirm Action</div>
+    <div class="confirm-msg" id="confirmMsg">Are you sure?</div>
+    <div class="confirm-btns" id="confirmBtns">
+      <button class="btn-confirm-cancel" id="confirmCancel">Cancel</button>
+      <button class="btn-confirm-approve" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
 
-<!-- ===================================================== -->
-<!-- SCRIPTS -->
-<!-- ===================================================== -->
+<!-- TOAST -->
+<div class="toast-erp" id="toast"><i id="toastIcon"></i><span id="toastMsg"></span></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script
-    type="module"
-    src="./js/sidebar.js"
-></script>
-
-<script
-    src="./js/recalls.js"
-></script>
-
+<script type="module" src="./js/sidebar.js"></script>
+<script src="./js/recalls.js"></script>
 </body>
 </html>

@@ -1,507 +1,383 @@
+// ═══════════════════════════════════════════════════════════
+// PHARMA ERP — batches.js  (optimised)
+// ═══════════════════════════════════════════════════════════
+
 const API_BASE = "http://127.0.0.1:8000/api/v1";
 
+// ── Auth ──────────────────────────────────────────────────────
 const token = sessionStorage.getItem("access");
+if (!token) window.location.href = "./login.html";
 
-if (!token) {
+// ── Generic authenticated fetch ───────────────────────────────
+async function apiFetch(endpoint, options = {}) {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+  });
 
-    window.location.href = "./login.html";
+  if (res.status === 401) {
+    sessionStorage.clear();
+    showToast("Session expired. Redirecting…", "error");
+    setTimeout(() => (window.location.href = "./login.html"), 1500);
+    return null;
+  }
+
+  return res;
 }
 
+const setText = (id, val) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+};
+// ═══════════════════════════════════════════════════════
+// 1. PROFILE
+// ═══════════════════════════════════════════════════════
+async function loadProfile() {
+    const res = await apiFetch("/auth/profile/");
+    if (!res) return;
 
-// =====================================================
-// AUTH FETCH
-// =====================================================
+    const user = await res.json();
 
-async function apiFetch(url, options = {}) {
+    setText("sidebarName", user.full_name);
+    setText("sidebarRole", user.role);
 
-    const response = await fetch(url, {
+    const avatarEl = document.getElementById("sidebarAvatar");
 
-        ...options,
-
-        headers: {
-
-            Authorization: `Bearer ${token}`,
-
-            "Content-Type": "application/json",
-
-            ...(options.headers || {})
-        }
-    });
-
-    if (response.status === 401) {
-
-        sessionStorage.clear();
-
-        alert("Session expired");
-
-        window.location.href = "./login.html";
-
-        return;
+    if (avatarEl) {
+        avatarEl.textContent =
+            user.full_name?.charAt(0).toUpperCase() ?? "?";
     }
-
-    return response;
 }
 
 
-// =====================================================
-// LOAD MEDICINES
-// =====================================================
+// ── XSS escape ────────────────────────────────────────────────
+function esc(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = "success") {
+  const el   = document.getElementById("toast");
+  const icon = document.getElementById("toastIcon");
+  const txt  = document.getElementById("toastMsg");
+
+  icon.className = type === "success"
+    ? "bi bi-check-circle-fill text-success"
+    : "bi bi-exclamation-circle-fill text-danger";
+
+  txt.textContent = msg;
+  el.className    = `toast-erp ${type} show`;
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+// ── Custom confirm dialog ─────────────────────────────────────
+function showConfirm() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("confirmOverlay");
+    overlay.classList.add("show");
+
+    const ok     = document.getElementById("confirmOk");
+    const cancel = document.getElementById("confirmCancel");
+
+    const cleanup = (val) => {
+      overlay.classList.remove("show");
+      ok.removeEventListener("click", onOk);
+      cancel.removeEventListener("click", onCancel);
+      resolve(val);
+    };
+
+    const onOk     = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    ok.addEventListener("click", onOk);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+// ── Date helpers ──────────────────────────────────────────────
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+// Days until expiry (negative = already expired)
+function daysUntil(dateStr) {
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return Math.round((d - today) / 86400000);
+}
+
+function expiryClass(dateStr, isRecalled) {
+  if (isRecalled) return "";
+  const days = daysUntil(dateStr);
+  if (days < 0)   return "expiry-past";
+  if (days <= 90) return "expiry-near";
+  return "";
+}
+
+function batchStatus(batch) {
+  if (batch.is_recalled) return { cls: "status-recalled", label: "Recalled" };
+  if (daysUntil(batch.expiry_date) < 0) return { cls: "status-expired", label: "Expired" };
+  return { cls: "status-active", label: "Active" };
+}
+
+// ── Load medicines into dropdown ──────────────────────────────
 async function loadMedicinesDropdown() {
+  try {
+    const res = await apiFetch("/medicines/");
+    if (!res) return;
+    if (!res.ok) throw new Error(await res.text());
 
-    try {
+    const data      = await res.json();
+    const medicines = data.results ?? (Array.isArray(data) ? data : []);
+    const select    = document.getElementById("medicine");
 
-        const response = await apiFetch(
-            `${API_BASE}/medicines/`
-        );
+    // Build all options in one innerHTML assign
+    select.innerHTML = medicines
+      .map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`)
+      .join("");
 
-        const data = await response.json();
-
-        const medicines =
-            data.results || data;
-
-        const medicineSelect =
-            document.getElementById(
-                "medicine"
-            );
-
-        medicineSelect.innerHTML = "";
-
-        medicines.forEach(medicine => {
-
-            medicineSelect.innerHTML += `
-
-                <option value="${medicine.id}">
-
-                    ${medicine.name}
-
-                </option>
-            `;
-        });
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("Failed to load medicines");
-    }
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to load medicines list", "error");
+  }
 }
 
+// ── Render batches table ──────────────────────────────────────
+function renderTable(batches) {
+  const tbody = document.getElementById("batchTableBody");
+  const count = document.getElementById("resultsCount");
 
-// =====================================================
-// LOAD BATCHES
-// =====================================================
+  count.textContent = `${batches.length} batch${batches.length !== 1 ? "es" : ""}`;
 
+  if (!batches.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="table-msg">No batches found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = batches.map((b) => {
+    const status  = batchStatus(b);
+    const expCls  = expiryClass(b.expiry_date, b.is_recalled);
+    const days    = daysUntil(b.expiry_date);
+    const expTip  = days < 0
+      ? `Expired ${Math.abs(days)}d ago`
+      : days <= 90
+        ? `Expires in ${days}d`
+        : "";
+
+    return `
+      <tr>
+        <td><span class="batch-num">${esc(b.batch_number)}</span></td>
+        <td>${esc(b.medicine_name ?? "—")}</td>
+        <td><span class="date-val">${esc(b.manufacture_date)}</span></td>
+        <td>
+          <span class="date-val ${expCls}" title="${expTip}">${esc(b.expiry_date)}</span>
+          ${expTip ? `<div style="font-size:11px;color:inherit;opacity:.8">${expTip}</div>` : ""}
+        </td>
+        <td><span class="qty-val">${esc(b.total_quantity)}</span></td>
+        <td><span class="status-pill ${status.cls}">${status.label}</span></td>
+        <td>
+          <div class="actions-cell">
+            <button class="action-btn edit" title="Edit"   data-id="${esc(b.id)}"><i class="bi bi-pencil"></i></button>
+            <button class="action-btn del"  title="Delete" data-id="${esc(b.id)}"><i class="bi bi-trash3"></i></button>
+          </div>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+// ── Load / search batches ─────────────────────────────────────
 async function loadBatches() {
+  const query  = document.getElementById("searchInput").value.trim();
+  const recall = document.getElementById("recallFilter").value;
 
-    try {
+  const params = new URLSearchParams();
+  if (query)  params.set("search", query);
+  if (recall) params.set("is_recalled", recall);
 
-        const search =
-            document.getElementById(
-                "searchInput"
-            ).value;
+  try {
+    const res = await apiFetch(`/batches/?${params}`);
+    if (!res) return;
+    if (!res.ok) throw new Error(await res.text());
 
-        const recall =
-            document.getElementById(
-                "recallFilter"
-            ).value;
+    const data    = await res.json();
+    const batches = data.results ?? (Array.isArray(data) ? data : []);
+    renderTable(batches);
 
-        let url =
-            `${API_BASE}/batches/?search=${search}`;
-
-        if (recall !== "") {
-
-            url += `&is_recalled=${recall}`;
-        }
-
-        const response = await apiFetch(url);
-
-        const data = await response.json();
-
-        console.log("BATCHES:", data);
-
-        const batches =
-            data.results || data;
-
-        const tableBody =
-            document.getElementById(
-                "batchTableBody"
-            );
-
-        tableBody.innerHTML = "";
-
-        if (batches.length === 0) {
-
-            tableBody.innerHTML = `
-
-                <tr>
-
-                    <td colspan="7" class="text-center">
-
-                        No batches found
-
-                    </td>
-
-                </tr>
-            `;
-
-            return;
-        }
-
-        batches.forEach(batch => {
-
-            const statusBadge =
-                batch.is_recalled
-                    ? `
-                        <span class="badge bg-danger">
-                            Recalled
-                        </span>
-                    `
-                    : `
-                        <span class="badge bg-success">
-                            Active
-                        </span>
-                    `;
-
-            tableBody.innerHTML += `
-
-                <tr>
-
-                    <td>
-
-                        <strong>
-                            ${batch.batch_number}
-                        </strong>
-
-                    </td>
-
-                    <td>
-
-                        ${batch.medicine_name || "-"}
-
-                    </td>
-
-                    <td>
-
-                        ${batch.manufacture_date}
-
-                    </td>
-
-                    <td>
-
-                        ${batch.expiry_date}
-
-                    </td>
-
-                    <td>
-
-                        ${batch.total_quantity}
-
-                    </td>
-
-                    <td>
-
-                        ${statusBadge}
-
-                    </td>
-
-                    <td>
-
-                        <div class="d-flex gap-2">
-
-                            <button
-                                class="btn btn-warning btn-sm"
-                                onclick="editBatch('${batch.id}')"
-                            >
-
-                                Edit
-
-                            </button>
-
-                            <button
-                                class="btn btn-danger btn-sm"
-                                onclick="deleteBatch('${batch.id}')"
-                            >
-
-                                Delete
-
-                            </button>
-
-                        </div>
-
-                    </td>
-
-                </tr>
-            `;
-        });
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("Failed to load batches");
-    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById("batchTableBody").innerHTML =
+      `<tr><td colspan="7" class="table-msg" style="color:var(--danger)">Failed to load batches</td></tr>`;
+  }
 }
 
+// ── Save / update ─────────────────────────────────────────────
+async function saveBatch() {
+  const id = document.getElementById("batchId").value.trim();
 
-// =====================================================
-// SAVE BATCH
-// =====================================================
+  // Basic date validation
+  const mfgDate = document.getElementById("manufacture_date").value;
+  const expDate = document.getElementById("expiry_date").value;
 
-document
-.getElementById("batchForm")
-.addEventListener("submit", async (e) => {
+  if (mfgDate && expDate && expDate <= mfgDate) {
+    showToast("Expiry date must be after manufacture date", "error");
+    return;
+  }
 
-    e.preventDefault();
+  const payload = {
+    medicine:         document.getElementById("medicine").value,
+    batch_number:     document.getElementById("batch_number").value.trim(),
+    manufacture_date: mfgDate,
+    expiry_date:      expDate,
+    total_quantity:   parseInt(document.getElementById("total_quantity").value, 10),
+  };
 
-    try {
+  // Loading state
+  const btn     = document.getElementById("saveBtn");
+  const spin    = document.getElementById("saveSpin");
+  const icon    = document.getElementById("saveIcon");
+  const btnText = document.getElementById("saveBtnText");
 
-        const batchId =
-            document.getElementById(
-                "batchId"
-            ).value;
+  btn.disabled        = true;
+  spin.style.display  = "block";
+  icon.style.display  = "none";
+  btnText.textContent = id ? "Updating…" : "Saving…";
 
-        const payload = {
+  try {
+    const res = await apiFetch(id ? `/batches/${id}/` : `/batches/`, {
+      method: id ? "PUT" : "POST",
+      body:   JSON.stringify(payload),
+    });
+    if (!res) return;
 
-            medicine:
-                document.getElementById(
-                    "medicine"
-                ).value,
+    const data = await res.json();
 
-            batch_number:
-                document.getElementById(
-                    "batch_number"
-                ).value,
-
-            manufacture_date:
-                document.getElementById(
-                    "manufacture_date"
-                ).value,
-
-            expiry_date:
-                document.getElementById(
-                    "expiry_date"
-                ).value,
-
-            total_quantity: parseInt(
-                document.getElementById(
-                    "total_quantity"
-                ).value
-            )
-        };
-
-        console.log("PAYLOAD:", payload);
-
-        let response;
-
-        if (batchId) {
-
-            response = await apiFetch(
-
-                `${API_BASE}/batches/${batchId}/`,
-
-                {
-                    method: "PUT",
-
-                    body: JSON.stringify(payload)
-                }
-            );
-
-        } else {
-
-            response = await apiFetch(
-
-                `${API_BASE}/batches/`,
-
-                {
-                    method: "POST",
-
-                    body: JSON.stringify(payload)
-                }
-            );
-        }
-
-        const data = await response.json();
-
-        console.log("RESPONSE:", data);
-
-        if (!response.ok) {
-
-            alert(JSON.stringify(data));
-
-            return;
-        }
-
-        alert("Batch saved successfully");
-
-        bootstrap.Modal
-            .getInstance(
-                document.getElementById(
-                    "batchModal"
-                )
-            )
-            .hide();
-
-        resetForm();
-
-        loadBatches();
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("Failed to save batch");
+    if (!res.ok) {
+      const msg = typeof data === "object"
+        ? Object.values(data).flat().join(" · ")
+        : "Save failed";
+      showToast(msg, "error");
+      return;
     }
-});
 
+    showToast(`Batch ${id ? "updated" : "added"} successfully`, "success");
+    bootstrap.Modal.getInstance(document.getElementById("batchModal"))?.hide();
+    resetForm();
+    loadBatches();
 
-// =====================================================
-// EDIT BATCH
-// =====================================================
+  } catch (err) {
+    console.error(err);
+    showToast("Save failed — please try again", "error");
+  } finally {
+    btn.disabled        = false;
+    spin.style.display  = "none";
+    icon.style.display  = "inline";
+    btnText.textContent = "Save Batch";
+  }
+}
 
+// ── Edit ──────────────────────────────────────────────────────
 async function editBatch(id) {
+  try {
+    const res = await apiFetch(`/batches/${id}/`);
+    if (!res) return;
+    if (!res.ok) throw new Error(await res.text());
 
-    try {
+    const b = await res.json();
 
-        const response = await apiFetch(
+    document.getElementById("batchId").value          = b.id;
+    document.getElementById("medicine").value          = b.medicine;
+    document.getElementById("batch_number").value      = b.batch_number ?? "";
+    document.getElementById("manufacture_date").value  = b.manufacture_date ?? "";
+    document.getElementById("expiry_date").value       = b.expiry_date ?? "";
+    document.getElementById("total_quantity").value    = b.total_quantity ?? "";
+    document.getElementById("modalTitle").textContent  = "Edit Batch";
 
-            `${API_BASE}/batches/${id}/`
-        );
+    new bootstrap.Modal(document.getElementById("batchModal")).show();
 
-        const batch = await response.json();
-
-        console.log("EDIT BATCH:", batch);
-
-        document.getElementById(
-            "batchId"
-        ).value = batch.id;
-
-        document.getElementById(
-            "medicine"
-        ).value = batch.medicine;
-
-        document.getElementById(
-            "batch_number"
-        ).value = batch.batch_number;
-
-        document.getElementById(
-            "manufacture_date"
-        ).value = batch.manufacture_date;
-
-        document.getElementById(
-            "expiry_date"
-        ).value = batch.expiry_date;
-
-        document.getElementById(
-            "total_quantity"
-        ).value = batch.total_quantity;
-
-        new bootstrap.Modal(
-            document.getElementById(
-                "batchModal"
-            )
-        ).show();
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("Failed to load batch");
-    }
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to load batch details", "error");
+  }
 }
 
-
-// =====================================================
-// DELETE BATCH
-// =====================================================
-
+// ── Delete ────────────────────────────────────────────────────
 async function deleteBatch(id) {
+  const confirmed = await showConfirm();
+  if (!confirmed) return;
 
-    if (!confirm("Delete this batch?")) {
+  try {
+    const res = await apiFetch(`/batches/${id}/`, { method: "DELETE" });
+    if (!res) return;
 
-        return;
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error ?? "Delete failed", "error");
+      return;
     }
 
-    try {
+    showToast("Batch deleted", "success");
+    loadBatches();
 
-        const response = await apiFetch(
-
-            `${API_BASE}/batches/${id}/`,
-
-            {
-                method: "DELETE"
-            }
-        );
-
-        if (!response.ok) {
-
-            const data = await response.json();
-
-            alert(
-                data.error ||
-                "Delete failed"
-            );
-
-            return;
-        }
-
-        alert("Batch deleted");
-
-        loadBatches();
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("Delete failed");
-    }
+  } catch (err) {
+    console.error(err);
+    showToast("Delete failed — please try again", "error");
+  }
 }
 
-
-// =====================================================
-// SEARCH
-// =====================================================
-
-document
-.getElementById("searchInput")
-.addEventListener("keyup", () => {
-
-    loadBatches();
-});
-
-
-// =====================================================
-// FILTER
-// =====================================================
-
-document
-.getElementById("recallFilter")
-.addEventListener("change", () => {
-
-    loadBatches();
-});
-
-
-// =====================================================
-// RESET FORM
-// =====================================================
-
+// ── Reset form ────────────────────────────────────────────────
 function resetForm() {
-
-    document.getElementById(
-        "batchForm"
-    ).reset();
-
-    document.getElementById(
-        "batchId"
-    ).value = "";
+  ["batchId", "batch_number", "manufacture_date", "expiry_date", "total_quantity"]
+    .forEach((id) => { document.getElementById(id).value = ""; });
+  document.getElementById("modalTitle").textContent = "Add Batch";
 }
 
+// ── Debounce ──────────────────────────────────────────────────
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
 
-// =====================================================
-// INIT
-// =====================================================
+// ── Events ───────────────────────────────────────────────────
 
-loadMedicinesDropdown();
+// Delegated table actions
+document.getElementById("batchTableBody").addEventListener("click", (e) => {
+  const btn = e.target.closest(".action-btn");
+  if (!btn) return;
+  const { id } = btn.dataset;
+  if (btn.classList.contains("edit")) editBatch(id);
+  if (btn.classList.contains("del"))  deleteBatch(id);
+});
 
-loadBatches();
+// Debounced search
+document.getElementById("searchInput").addEventListener(
+  "input",
+  debounce(() => loadBatches(), 300)
+);
+
+// Filter change
+document.getElementById("recallFilter").addEventListener("change", () => loadBatches());
+
+// Refresh button
+document.getElementById("refreshBtn").addEventListener("click", () => loadBatches());
+
+// Add button
+document.getElementById("addBatchBtn").addEventListener("click", () => {
+  resetForm();
+  new bootstrap.Modal(document.getElementById("batchModal")).show();
+});
+
+// Save button
+document.getElementById("saveBtn").addEventListener("click", saveBatch);
+
+// ── Init ─────────────────────────────────────────────────────
+// Run both in parallel — dropdown and table load simultaneously
+Promise.all([loadMedicinesDropdown(), loadBatches(), loadProfile()]);
