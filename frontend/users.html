@@ -1,474 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users — PharmaERP</title>
 
-    <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  <style>
+    :root {
+      --bg:#0d1117;--surface:#161b22;--surface2:#1c2230;
+      --border:rgba(255,255,255,0.07);--text:#e6edf3;--muted:#7d8590;
+      --accent:#3b82f6;--accent2:#10b981;--warning:#f59e0b;--danger:#ef4444;
+      --purple:#8b5cf6;--cyan:#06b6d4;
+      --radius:14px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--tr:0.18s ease;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-    <title>
-        User Management
-    </title>
+    /* Sidebar */
+    .sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+    .sidebar-brand{padding:24px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .brand-icon{width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .brand-name{font-size:15px;font-weight:700;letter-spacing:-0.3px}.brand-ver{font-size:11px;color:var(--muted);font-family:var(--mono)}
+    .sidebar-nav{padding:16px 12px;flex:1;overflow-y:auto}
+    .nav-label{font-size:10px;font-weight:600;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;padding:8px 8px 6px;margin-top:8px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all var(--tr)}
+    .nav-item:hover{background:var(--surface2);color:var(--text)}.nav-item.active{background:rgba(59,130,246,.15);color:var(--accent)}
+    .nav-item i{font-size:16px;width:20px}
+    .sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+    .user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;cursor:pointer;transition:background var(--tr)}
+    .user-pill:hover{background:rgba(255,255,255,.06)}
+    .avatar{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+    .user-name{font-size:13px;font-weight:600}.user-role{font-size:11px;color:var(--muted)}
 
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+    /* Main */
+    .main-content{margin-left:240px;flex:1;padding:32px;min-height:100vh}
+    .page-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:28px}
+    .page-title{font-size:28px;font-weight:700;letter-spacing:-0.8px}.page-sub{font-size:14px;color:var(--muted);margin-top:4px}
+    .header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 
-    <link
-        rel="stylesheet"
-        href="./css/styles.css"
-    >
+    /* Buttons */
+    .btn-erp{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--tr);font-family:var(--font)}
+    .btn-primary-erp{background:var(--accent);color:#fff}.btn-primary-erp:hover{background:#2563eb}
+    .btn-danger-erp{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.2)}.btn-danger-erp:hover{background:rgba(239,68,68,.22)}
+    .btn-ghost{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text)}
+    .btn-save{background:var(--accent2);color:#fff;padding:9px 22px;border-radius:9px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background var(--tr);display:flex;align-items:center;gap:7px}
+    .btn-save:hover{background:#059669}.btn-save:disabled{opacity:.6;cursor:not-allowed}
 
+    /* KPI grid */
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+    .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;transition:transform var(--tr);animation:fadeUp .4s ease forwards;opacity:0}
+    .kpi-card:nth-child(1){animation-delay:.05s}.kpi-card:nth-child(2){animation-delay:.10s}
+    .kpi-card:nth-child(3){animation-delay:.15s}.kpi-card:nth-child(4){animation-delay:.20s}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .kpi-card:hover{transform:translateY(-2px)}
+    .kpi-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .kpi-value{font-size:28px;font-weight:700;letter-spacing:-1px;font-family:var(--mono);line-height:1}
+    .kpi-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+    .kpi-icon.blue  {background:rgba(59,130,246,.12);color:var(--accent)}
+    .kpi-icon.purple{background:rgba(139,92,246,.12);color:var(--purple)}
+    .kpi-icon.green {background:rgba(16,185,129,.12);color:var(--accent2)}
+    .kpi-icon.muted {background:rgba(255,255,255,.05);color:var(--muted)}
+
+    /* Card */
+    .card-erp{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+
+    /* Toolbar */
+    .toolbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .search-wrap{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:0 12px;flex:1;min-width:180px;transition:border-color var(--tr)}
+    .search-wrap:focus-within{border-color:var(--accent)}
+    .search-wrap i{color:var(--muted);font-size:15px;flex-shrink:0}
+    .search-input{background:transparent;border:none;color:var(--text);font-size:14px;padding:9px 0;font-family:var(--font);outline:none;width:100%}
+    .search-input::placeholder{color:var(--muted)}
+    .filter-select{background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;padding:9px 14px;font-family:var(--font);outline:none;cursor:pointer;transition:border-color var(--tr)}
+    .filter-select:focus{border-color:var(--accent)}.filter-select option{background:var(--surface2)}
+    .results-count{padding:10px 20px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);font-family:var(--mono)}
+
+    /* User table */
+    .users-table{width:100%;border-collapse:collapse;font-size:13px}
+    .users-table th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+    .users-table td{padding:13px 16px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+    .users-table tbody tr:last-child td{border-bottom:none}
+    .users-table tbody tr{transition:background var(--tr);cursor:pointer}.users-table tbody tr:hover{background:rgba(255,255,255,.03)}
+
+    .user-row-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+    .user-row-info{display:flex;align-items:center;gap:10px}
+    .user-full-name{font-weight:600;font-size:13px}
+    .user-email{font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+    /* Role pills */
+    .role-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600}
+    .role-admin            {background:rgba(239,68,68,.12);color:var(--danger)}
+    .role-warehouse_manager{background:rgba(59,130,246,.12);color:var(--accent)}
+    .role-staff            {background:rgba(16,185,129,.12);color:var(--accent2)}
+    .role-auditor          {background:rgba(139,92,246,.12);color:var(--purple)}
+
+    /* Status pill */
+    .status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:50px;font-size:11px;font-weight:600}
+    .status-active  {background:rgba(16,185,129,.12);color:var(--accent2)}
+    .status-inactive{background:rgba(255,255,255,.05);color:var(--muted)}
+
+    /* Action buttons */
+    .action-btn{width:30px;height:30px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--tr);font-size:13px}
+    .action-btn.view   {background:rgba(6,182,212,.12);color:var(--cyan)}.action-btn.view:hover{background:rgba(6,182,212,.25)}
+    .action-btn.edit   {background:rgba(59,130,246,.12);color:var(--accent)}.action-btn.edit:hover{background:rgba(59,130,246,.25)}
+    .action-btn.toggle {background:rgba(245,158,11,.12);color:var(--warning)}.action-btn.toggle:hover{background:rgba(245,158,11,.25)}
+    .actions-cell{display:flex;gap:6px}
+
+    .table-msg{text-align:center;padding:40px 0;color:var(--muted);font-size:14px}
+    .skeleton{background:linear-gradient(90deg,var(--surface2) 25%,rgba(255,255,255,.04) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:13px;display:inline-block}
+    @keyframes shimmer{to{background-position:-200% 0}}
+
+    /* ── Profile Drawer ── */
+    .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;backdrop-filter:blur(3px)}
+    .drawer-overlay.open{display:block}
+    .drawer{position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:201;transition:right .3s ease;overflow-y:auto;display:flex;flex-direction:column}
+    .drawer.open{right:0}
+    .drawer-head{padding:22px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+    .drawer-title{font-size:15px;font-weight:700}
+    .drawer-close{width:32px;height:32px;border-radius:8px;border:none;background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all var(--tr)}
+    .drawer-close:hover{color:var(--text)}
+    .drawer-body{padding:24px;flex:1}
+
+    .profile-hero{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:20px;background:var(--surface2);border-radius:12px}
+    .profile-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0}
+    .profile-name{font-size:18px;font-weight:700;margin-bottom:4px}
+    .profile-email{font-size:12px;color:var(--muted);font-family:var(--mono)}
+
+    .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+    .profile-field{background:var(--surface2);border-radius:10px;padding:14px}
+    .profile-field-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+    .profile-field-value{font-size:14px;font-weight:500}
+    .profile-field.full{grid-column:1/-1}
+
+    .drawer-section{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin:20px 0 12px}
+
+    .drawer-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap}
+
+    /* ── Modal ── */
+    .modal-erp .modal-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)}
+    .modal-erp .modal-header{padding:20px 24px;border-bottom:1px solid var(--border);background:var(--surface2)}
+    .modal-erp .modal-title{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+    .modal-erp .btn-close{filter:invert(1) brightness(.7)}.modal-erp .btn-close:hover{filter:invert(1) brightness(1)}
+    .modal-erp .modal-body{padding:24px}
+    .form-label-erp{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .form-control-erp,.form-select-erp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;padding:9px 14px;font-family:var(--font);outline:none;transition:border-color var(--tr)}
+    .form-control-erp::placeholder{color:var(--muted)}
+    .form-control-erp:focus,.form-select-erp:focus{border-color:var(--accent);box-shadow:none}
+    .form-select-erp option{background:var(--surface2);color:var(--text)}
+    .form-control-erp.invalid,.form-select-erp.invalid{border-color:var(--danger)}
+    .modal-footer-erp{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+    /* Password strength */
+    .pw-strength{height:4px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
+    .pw-fill{height:100%;border-radius:2px;width:0;transition:width .3s,background .3s}
+    .pw-hint{font-size:11px;color:var(--muted);margin-top:4px}
+
+    .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Confirm */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9998;backdrop-filter:blur(4px)}
+    .confirm-overlay.show{display:flex}
+    .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:360px;width:90%;text-align:center}
+    .confirm-icon{font-size:36px;margin-bottom:12px}.confirm-title{font-size:16px;font-weight:700;margin-bottom:8px}
+    .confirm-msg{font-size:13px;color:var(--muted);margin-bottom:24px}.confirm-btns{display:flex;gap:10px;justify-content:center}
+    .btn-confirm-cancel{padding:8px 20px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+    .btn-confirm-ok{padding:8px 20px;background:var(--danger);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+
+    /* Toast */
+    .toast-erp{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:9999;pointer-events:none}
+    .toast-erp.show{transform:translateY(0);opacity:1}
+    .toast-erp.success{border-left:3px solid var(--accent2)}.toast-erp.error{border-left:3px solid var(--danger)}
+    .toast-erp.warning{border-left:3px solid var(--warning)}
+
+    @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main-content{margin-left:0;padding:20px}.drawer{width:100%;right:-100%}}
+    @media(max-width:480px){.kpi-grid{grid-template-columns:1fr}}
+  </style>
 </head>
+<body>
 
-<body class="bg-light">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">💊</div>
+    <div><div class="brand-name">PharmaERP</div><div class="brand-ver">v1.0.0</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <a href="./dashboard.html"    class="nav-item"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+    <div class="nav-label admin-section">Admin</div>
+    <a href="./users.html" class="nav-item active admin-section"><i class="bi bi-people-fill"></i> Users</a>
+    <div class="nav-label">Inventory</div>
+    <a href="./medicines.html"       class="nav-item"><i class="bi bi-capsule-pill"></i> Medicines</a>
+    <a href="./batches.html"         class="nav-item"><i class="bi bi-box-seam"></i> Batches</a>
+    <a href="./warehouses.html"      class="nav-item"><i class="bi bi-buildings"></i> Warehouses</a>
+    <a href="./warehouse-stock.html" class="nav-item"><i class="bi bi-stack"></i> Stock</a>
+    <div class="nav-label">Compliance</div>
+    <a href="./recalls.html"         class="nav-item"><i class="bi bi-exclamation-triangle"></i> Recalls</a>
+    <a href="./audit-logs.html"      class="nav-item"><i class="bi bi-journal-text"></i> Audit Logs</a>
+    <div class="nav-label">Transfers</div>
+    <a href="./stock-transfer.html"  class="nav-item"><i class="bi bi-arrow-left-right"></i> Stock Transfer</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-pill" id="sidebarUserPill">
+      <div class="avatar" id="sidebarAvatar">?</div>
+      <div><div class="user-name" id="sidebarName">Loading…</div><div class="user-role" id="sidebarRole">—</div></div>
+    </div>
+  </div>
+</aside>
 
-<div class="d-flex">
+<!-- MAIN -->
+<main class="main-content">
 
-    <!-- SIDEBAR -->
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">User Management</h1>
+      <p class="page-sub" id="welcomeText">Manage team accounts and access roles</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-erp btn-primary-erp" id="createUserBtn">
+        <i class="bi bi-person-plus-fill"></i> Create User
+      </button>
+    </div>
+  </div>
 
-    <div
-        class="bg-dark text-white p-3 vh-100 position-fixed"
-        style="width:250px;"
-    >
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div><div class="kpi-label">Total Users</div><div class="kpi-value" id="kpiTotal">—</div></div>
+      <div class="kpi-icon blue"><i class="bi bi-people-fill"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Admins</div><div class="kpi-value" id="kpiAdmins">—</div></div>
+      <div class="kpi-icon purple"><i class="bi bi-shield-fill-check"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Active</div><div class="kpi-value" id="kpiActive" style="color:var(--accent2)">—</div></div>
+      <div class="kpi-icon green"><i class="bi bi-person-check-fill"></i></div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Inactive</div><div class="kpi-value" id="kpiInactive" style="color:var(--muted)">—</div></div>
+      <div class="kpi-icon muted"><i class="bi bi-person-dash-fill"></i></div>
+    </div>
+  </div>
 
-        <h2 class="mb-4 fw-bold">
-            Pharma ERP
-        </h2>
-
-        <ul class="nav flex-column">
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./dashboard.html"
-                    class="nav-link text-white"
-                >
-                    Dashboard
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./users.html"
-                    class="nav-link text-warning fw-bold"
-                >
-                    Users
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./medicines.html"
-                    class="nav-link text-white"
-                >
-                    Medicines
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./batches.html"
-                    class="nav-link text-white"
-                >
-                    Batches
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./warehouses.html"
-                    class="nav-link text-white"
-                >
-                    Warehouses
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./stock-allocation.html"
-                    class="nav-link text-white"
-                >
-                    Stock Allocation
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./stock-transfer.html"
-                    class="nav-link text-white"
-                >
-                    Stock Transfer
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./recalls.html"
-                    class="nav-link text-white"
-                >
-                    Recalls
-                </a>
-            </li>
-
-            <li class="nav-item mb-2">
-                <a
-                    href="./audit-logs.html"
-                    class="nav-link text-white"
-                >
-                    Audit Logs
-                </a>
-            </li>
-
-            <li class="nav-item mt-4">
-
-                <button
-                    id="logoutBtn"
-                    class="btn btn-danger w-100"
-                >
-                    Logout
-                </button>
-
-            </li>
-
-        </ul>
-
+  <!-- Users table -->
+  <div class="card-erp">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by name, email or username…" autocomplete="off" />
+      </div>
+      <select id="roleFilter" class="filter-select">
+        <option value="">All Roles</option>
+        <option value="admin">Admin</option>
+        <option value="warehouse_manager">Warehouse Manager</option>
+        <option value="staff">Staff</option>
+        <option value="auditor">Auditor</option>
+      </select>
+      <select id="statusFilter" class="filter-select">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <button class="btn-erp btn-ghost" id="refreshBtn" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
     </div>
 
-    <!-- MAIN CONTENT -->
-
-    <div
-        class="flex-grow-1 p-4"
-        style="margin-left:250px;"
-    >
-
-        <!-- HEADER -->
-
-        <div class="d-flex justify-content-between align-items-center">
-
-            <div>
-
-                <h1 class="fw-bold">
-                    User Management
-                </h1>
-
-                <p
-                    id="welcomeText"
-                    class="text-muted"
-                >
-                    Loading...
-                </p>
-
-            </div>
-
-            <button
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#userModal"
-            >
-                + Create User
-            </button>
-
-        </div>
-
-        <!-- USER STATS -->
-
-        <div class="row mt-4 g-4">
-
-            <div class="col-md-3">
-
-                <div class="card shadow border-0">
-
-                    <div class="card-body">
-
-                        <h6 class="text-muted">
-                            Total Users
-                        </h6>
-
-                        <h2 id="totalUsers">
-                            0
-                        </h2>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-3">
-
-                <div class="card shadow border-0">
-
-                    <div class="card-body">
-
-                        <h6 class="text-muted">
-                            Admins
-                        </h6>
-
-                        <h2 id="adminCount">
-                            0
-                        </h2>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-3">
-
-                <div class="card shadow border-0">
-
-                    <div class="card-body">
-
-                        <h6 class="text-muted">
-                            Managers
-                        </h6>
-
-                        <h2 id="managerCount">
-                            0
-                        </h2>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-3">
-
-                <div class="card shadow border-0">
-
-                    <div class="card-body">
-
-                        <h6 class="text-muted">
-                            Auditors
-                        </h6>
-
-                        <h2 id="auditorCount">
-                            0
-                        </h2>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- SEARCH -->
-
-        <div class="card shadow border-0 mt-4">
-
-            <div class="card-body">
-
-                <input
-                    type="text"
-                    id="searchInput"
-                    class="form-control"
-                    placeholder="Search users..."
-                >
-
-            </div>
-
-        </div>
-
-        <!-- USERS TABLE -->
-
-        <div class="card shadow border-0 mt-4">
-
-            <div class="card-body">
-
-                <div class="table-responsive">
-
-                    <table class="table table-hover">
-
-                        <thead class="table-dark">
-
-                            <tr>
-
-                                <th>Name</th>
-
-                                <th>Email</th>
-
-                                <th>Username</th>
-
-                                <th>Role</th>
-
-                                <th>Warehouse</th>
-
-                                <th>Status</th>
-
-                                <th>Joined</th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody id="userTableBody">
-
-                            <tr>
-
-                                <td colspan="7">
-                                    Loading users...
-                                </td>
-
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <div class="results-count" id="resultsCount">Loading…</div>
+
+    <div style="overflow-x:auto;">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Warehouse</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th style="width:110px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr><td colspan="7" class="table-msg"><span class="skeleton" style="width:220px"></span></td></tr>
+        </tbody>
+      </table>
     </div>
+  </div>
+</main>
 
+<!-- ═══ PROFILE DRAWER ════════════════════════════════════ -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="profileDrawer">
+  <div class="drawer-head">
+    <span class="drawer-title">User Profile</span>
+    <button class="drawer-close" id="drawerClose"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="drawer-body" id="drawerBody">
+    <!-- Populated by JS -->
+  </div>
 </div>
 
-<!-- CREATE USER MODAL -->
-
-<div
-    class="modal fade"
-    id="userModal"
-    tabindex="-1"
->
-
-    <div class="modal-dialog">
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h5 class="modal-title">
-                    Create User
-                </h5>
-
-                <button
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                ></button>
-
-            </div>
-
-            <div class="modal-body">
-
-                <form id="userForm">
-
-                    <input
-                        type="text"
-                        id="first_name"
-                        class="form-control mb-2"
-                        placeholder="First Name"
-                        required
-                    >
-
-                    <input
-                        type="text"
-                        id="last_name"
-                        class="form-control mb-2"
-                        placeholder="Last Name"
-                        required
-                    >
-
-                    <input
-                        type="email"
-                        id="email"
-                        class="form-control mb-2"
-                        placeholder="Email"
-                        required
-                    >
-
-                    <input
-                        type="text"
-                        id="username"
-                        class="form-control mb-2"
-                        placeholder="Username"
-                        required
-                    >
-
-                    <input
-                        type="password"
-                        id="password"
-                        class="form-control mb-2"
-                        placeholder="Password"
-                        required
-                    >
-
-                    <input
-                        type="password"
-                        id="password_confirm"
-                        class="form-control mb-2"
-                        placeholder="Confirm Password"
-                        required
-                    >
-
-                    <select
-                        id="role"
-                        class="form-select mb-2"
-                    >
-
-                        <option value="staff">
-                            Staff
-                        </option>
-
-                        <option value="admin">
-                            Admin
-                        </option>
-
-                        <option value="warehouse_manager">
-                            Warehouse Manager
-                        </option>
-
-                        <option value="auditor">
-                            Auditor
-                        </option>
-
-                    </select>
-
-                    <select
-                        id="assigned_warehouse"
-                        class="form-select mb-3"
-                    >
-
-                        <option value="">
-                            Select Warehouse
-                        </option>
-
-                    </select>
-
-                    <button
-                        class="btn btn-success w-100"
-                    >
-                        Create User
-                    </button>
-
-                </form>
-
-            </div>
-
+<!-- ═══ CREATE / EDIT USER MODAL ══════════════════════════ -->
+<div class="modal fade modal-erp" id="userModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Create User</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="userId" />
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label-erp">First Name *</label>
+            <input type="text" id="firstName" class="form-control-erp" placeholder="Suraj" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-erp">Last Name *</label>
+            <input type="text" id="lastName" class="form-control-erp" placeholder="Bhavake" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-erp">Email *</label>
+            <input type="email" id="email" class="form-control-erp" placeholder="user@pharma.com" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-erp">Username *</label>
+            <input type="text" id="username" class="form-control-erp" placeholder="suraj_bhavake" required />
+          </div>
+          <!-- Password fields — only shown for new users -->
+          <div class="col-md-6" id="passwordGroup">
+            <label class="form-label-erp">Password *</label>
+            <input type="password" id="password" class="form-control-erp" placeholder="Min 8 characters" autocomplete="new-password" />
+            <div class="pw-strength"><div class="pw-fill" id="pwFill"></div></div>
+            <div class="pw-hint" id="pwHint">Enter a password</div>
+          </div>
+          <div class="col-md-6" id="confirmPasswordGroup">
+            <label class="form-label-erp">Confirm Password *</label>
+            <input type="password" id="confirmPassword" class="form-control-erp" placeholder="Repeat password" autocomplete="new-password" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-erp">Role *</label>
+            <select id="role" class="form-select-erp">
+              <option value="staff">Staff</option>
+              <option value="warehouse_manager">Warehouse Manager</option>
+              <option value="auditor">Auditor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="col-md-6" id="editStatusGroup" style="display:none">
+            <label class="form-label-erp">Status</label>
+            <select id="isActive" class="form-select-erp">
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
         </div>
-
+      </div>
+      <div class="modal-footer-erp">
+        <button class="btn-erp btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn-save" id="saveBtn" type="button">
+          <div class="spin" id="saveSpin"></div>
+          <i class="bi bi-person-check" id="saveIcon"></i>
+          <span id="saveBtnText">Create User</span>
+        </button>
+      </div>
     </div>
-
+  </div>
 </div>
 
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-></script>
+<!-- CONFIRM -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Confirm</div>
+    <div class="confirm-msg"   id="confirmMsg">Are you sure?</div>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" id="confirmCancel">Cancel</button>
+      <button class="btn-confirm-ok"     id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
 
-<script
-    type="module"
-    src="./js/users.js"
-></script>
+<!-- TOAST -->
+<div class="toast-erp" id="toast"><i id="toastIcon"></i><span id="toastMsg"></span></div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="./js/sidebar.js"></script>
+<script src="./js/users.js"></script>
 </body>
 </html>
